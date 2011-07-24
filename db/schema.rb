@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110721183959) do
+ActiveRecord::Schema.define(:version => 20110721194406) do
 
   create_table "cats", :force => true do |t|
     t.string   "name"
@@ -25,6 +25,21 @@ ActiveRecord::Schema.define(:version => 20110721183959) do
   end
 
   add_index "cats_topics", ["cat_id", "topic_id"], :name => "index_cats_topics_on_cat_id_and_topic_id", :unique => true
+
+  create_table "delayed_jobs", :force => true do |t|
+    t.integer  "priority",   :default => 0
+    t.integer  "attempts",   :default => 0
+    t.text     "handler"
+    t.text     "last_error"
+    t.datetime "run_at"
+    t.datetime "locked_at"
+    t.datetime "failed_at"
+    t.string   "locked_by"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "delayed_jobs", ["priority", "run_at"], :name => "delayed_jobs_priority"
 
   create_table "links", :force => true do |t|
     t.integer  "topic_id"
@@ -42,7 +57,8 @@ ActiveRecord::Schema.define(:version => 20110721183959) do
 
   create_table "topics", :force => true do |t|
     t.string   "name"
-    t.string   "url"
+    t.string   "img_url"
+    t.string   "description"
     t.datetime "created_at"
     t.datetime "updated_at"
   end

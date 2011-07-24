@@ -2,7 +2,8 @@ class CreateTopics < ActiveRecord::Migration
   def self.up
     create_table :topics do |t|
       t.string :name
-      t.string :url
+      t.string :img_url
+      t.string :description
 
       t.timestamps
     end

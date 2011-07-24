@@ -4,6 +4,7 @@ Wikiscrape::Application.routes.draw do
   resources :cats
 
   match "/topics/get/:name" => "topics#get"
+  match "/cats/get/:name" => "cats#get"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

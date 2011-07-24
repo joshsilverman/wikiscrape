@@ -30,6 +30,10 @@ GEM
     activesupport (3.0.3)
     arel (2.0.10)
     builder (2.1.2)
+    daemons (1.1.4)
+    delayed_job (2.1.4)
+      activesupport (~> 3.0)
+      daemons
     erubis (2.6.6)
       abstract (>= 1.0.0)
     i18n (0.6.0)
@@ -62,7 +66,10 @@ GEM
       rake (>= 0.8.7)
       thor (~> 0.14.4)
     rake (0.9.2)
+    scrapi (1.2.0)
+      tidy (>= 1.1.0)
     thor (0.14.6)
+    tidy (1.1.2)
     treetop (1.4.9)
       polyglot (>= 0.3.1)
     tzinfo (0.3.27)
@@ -71,7 +78,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  delayed_job
   mocha
   mysql2 (< 0.3)
   nifty-generators
   rails (= 3.0.3)
+  scrapi (= 1.2.0)

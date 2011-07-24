@@ -1,6 +1,5 @@
 class CatsController < ApplicationController
-  # GET /cats
-  # GET /cats.xml
+
   def index
     @cats = Cat.all
 
@@ -10,74 +9,44 @@ class CatsController < ApplicationController
     end
   end
 
-  # GET /cats/1
-  # GET /cats/1.xml
-  def show
-    @cat = Cat.find(params[:id])
+  def get
+    @cat = Cat.find_by_name(params[:name])
+
+    # fetch and save if no topic
+    Cat.transaction do
+    if not @cat
+      cats_topics = lookup(params[:name])
+      @cat = Cat.create!(:name => params[:name])
+      cats_topics.each do |topic|
+        @cat.topics.find_or_create_by_name(topic[0]) unless @topic
+      end
+    end
+    end
+
+    render :text => @cat.to_yaml
+    return
 
     respond_to do |format|
       format.html # show.html.erb
       format.xml  { render :xml => @cat }
+      format.json  { render :json => @cat }
     end
   end
 
-  # GET /cats/new
-  # GET /cats/new.xml
-  def new
-    @cat = Cat.new
+  private
 
-    respond_to do |format|
-      format.html # new.html.erb
-      format.xml  { render :xml => @cat }
+  def lookup(name)
+    wiki_cat = Scraper.define do
+      array :names
+      array :urls
+      process "#mw-pages li a", :names => :text, :urls => "@href"
+      result  :names, :urls
     end
+
+    wiki_cat.options[:user_agent] = "Mozilla/4.0"
+    cats = wiki_cat.scrape(URI.parse("http://en.wikipedia.org/wiki/Category:#{name}"))
+    cats_zip = cats[:names].zip(cats[:urls])
+    return cats_zip
   end
 
-  # GET /cats/1/edit
-  def edit
-    @cat = Cat.find(params[:id])
-  end
-
-  # POST /cats
-  # POST /cats.xml
-  def create
-    @cat = Cat.new(params[:cat])
-
-    respond_to do |format|
-      if @cat.save
-        format.html { redirect_to(@cat, :notice => 'Cat was successfully created.') }
-        format.xml  { render :xml => @cat, :status => :created, :location => @cat }
-      else
-        format.html { render :action => "new" }
-        format.xml  { render :xml => @cat.errors, :status => :unprocessable_entity }
-      end
-    end
-  end
-
-  # PUT /cats/1
-  # PUT /cats/1.xml
-  def update
-    @cat = Cat.find(params[:id])
-
-    respond_to do |format|
-      if @cat.update_attributes(params[:cat])
-        format.html { redirect_to(@cat, :notice => 'Cat was successfully updated.') }
-        format.xml  { head :ok }
-      else
-        format.html { render :action => "edit" }
-        format.xml  { render :xml => @cat.errors, :status => :unprocessable_entity }
-      end
-    end
-  end
-
-  # DELETE /cats/1
-  # DELETE /cats/1.xml
-  def destroy
-    @cat = Cat.find(params[:id])
-    @cat.destroy
-
-    respond_to do |format|
-      format.html { redirect_to(cats_url) }
-      format.xml  { head :ok }
-    end
-  end
 end
