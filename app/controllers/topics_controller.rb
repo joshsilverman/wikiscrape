@@ -11,15 +11,42 @@ class TopicsController < ApplicationController
 
 
   def get
-    @topic = Topic.find_by_name(params[:name])
+    human_name = params[:name].gsub("_", " ")
+    @topic = Topic.find_by_name(human_name)
 
     # fetch and save if no topic
-    if not @topic or @topic.description.nil?
+    if @topic.nil? or @topic.description.nil?
       topic_details = lookup(params[:name])
-      @topic = Topic.create(
-        :name => params[:name],
-        :img_url => topic_details[:image],
-        :description => topic_details[:description])
+
+      if @topic.nil?
+        @topic = Topic.create(
+          :name => human_name,
+          :img_url => (topic_details[:image][0] if topic_details[:image]),
+          :description => (topic_details[:description][0] if topic_details[:description]))
+      else
+        @topic.update(
+          :img_url => (topic_details[:image][0] if topic_details[:image]),
+          :description => (topic_details[:description][0] if topic_details[:description]))
+      end
+
+      topic_details[:catlinks].each do |cat_name|
+
+        @cat = Cat.find_by_name(cat_name)
+        Cat.transaction do
+          if not @cat
+            cats_topics = cat_lookup(cat_name)
+            
+            @cat = Cat.create!(:name => cat_name)
+            cats_topics.each do |topic_name|
+              topic = Topic.find_by_name(topic_name)
+                @cat.topics.create(:name => topic_name) unless topic
+            end
+          end
+        end
+        @cat.topics << @topic
+      end
+
+
     end
 
     respond_to do |format|
@@ -46,7 +73,8 @@ class TopicsController < ApplicationController
       end
       process ".infobox img, .thumb img", :image => "@src"
       process "#bodyContent>ul>li>a", :follow => "@href"
-      process "#catlinks > span > a", :catlinks => "@src"
+      process "#catlinks span a", :catlinks => :text
+#      process "a", :catlinks => :text
 
       result  :image, :description, :follow, :catlinks
     end
@@ -60,14 +88,7 @@ class TopicsController < ApplicationController
       end
     end
 
-    
-
-    topic = {:topic => name, :description => "", :image => ""}
-    topic[:description] = article.description[description_index]  if article.description and article.description.size > 0
-    topic[:image] = article.image[0] if article.image and article.image.size > 0
-    topic[:catlinks] = article.image[0] if article.image and article.image.size > 0
-
-    return topic
+    return article
   end
 
   def legal_lookup
@@ -77,5 +98,20 @@ class TopicsController < ApplicationController
   end
 
   def bio_lookup
+  end
+
+  def cat_lookup(name)
+
+    puts name
+
+    wiki_cat = Scraper.define do
+      array :names
+      process "#mw-pages li a", :names => :text
+      result  :names
+    end
+
+    wiki_cat.options[:user_agent] = "Mozilla/4.0"
+    topic_names = wiki_cat.scrape(URI.parse("http://en.wikipedia.org/wiki/Category:#{name.gsub(" ", "_")}"))
+    return topic_names
   end
 end
