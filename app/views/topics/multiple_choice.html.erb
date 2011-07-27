@@ -1,0 +1,14 @@
+<h1>Multiple Choice</h1>
+
+<% @test.cats.each do |w| %>
+<%= w.name %><br/>
+<% end %>
+
+<p><%= @desc %></p>
+
+<% @mc.each do |w| %>
+<%= w %><br/>
+<% end %>
+
+
+

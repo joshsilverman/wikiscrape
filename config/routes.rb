@@ -5,8 +5,9 @@ Wikiscrape::Application.routes.draw do
 
   match "/topics/get/:name" => "topics#get"
   match "/cats/get/:name" => "cats#get"
+  match "/multiple/:name" => "topics#multiple_choice"
   match "/topics/index"
-  match "/cats/index"
+  match "/cats/index" => "cats#index"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.
