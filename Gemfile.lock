@@ -44,9 +44,12 @@ GEM
       treetop (~> 1.4.8)
     mime-types (1.16)
     mocha (0.9.12)
+    multi_json (1.0.3)
     mysql2 (0.2.7)
     nifty-generators (0.4.5)
     polyglot (0.3.1)
+    rabl (0.3.0)
+      multi_json (~> 1.0.3)
     rack (1.2.3)
     rack-mount (0.6.14)
       rack (>= 1.0.0)
@@ -82,5 +85,6 @@ DEPENDENCIES
   mocha
   mysql2 (< 0.3)
   nifty-generators
+  rabl
   rails (= 3.0.3)
   scrapi (= 1.2.0)

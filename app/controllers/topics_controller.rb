@@ -165,16 +165,21 @@ class TopicsController < ApplicationController
           end
         end
       end
+      get_text = Scraper.define do
+        process "p", :just_text => :text
+        result :just_text
+      end
+      @topic.description = get_text.scrape(@topic.description)
 
     respond_to do |format|
       format.html # show.html.erb
       format.xml  { render :xml => @topic }
-      format.json  { render :json => @topic }
+      format.json  { render :json => @topic.as_json(:only => [:description, :img_url]) }
     end
   end
 
   def multiple_choice
-    @fill_in_blank = "Sorry...we dont have a fill in the blank for that term yet"
+    @fill_in_blank = ""
     @choices = []
 
     human_name = params[:name].gsub("_", " ")
@@ -185,6 +190,14 @@ class TopicsController < ApplicationController
         @fill_in_blank = fill_in_blank(@topic)
         @choices = answers(@topic, @fill_in_blank)
       end
+    end
+
+    @mc_json = {:blank => @fill_in_blank, :answers => {:c_answer => @choices[0], :i_answer => @choices[1..3]}}
+    @mc_json = @mc_json.to_json
+
+    respond_to do |format|
+      format.html # index.html.erb
+      format.json  { render :json => @mc_json }
     end
   end
 
@@ -313,13 +326,13 @@ class TopicsController < ApplicationController
     text = get_text.scrape(html)
     beg = text.index('(')
     tend = text.index(')')
-    unless beg.nil?
+    unless beg.nil? or tend.nil?
       p1 = text[0..(beg-1)]
       p2 = text[(tend+1)..-1]
       text = p1+p2
     end
 
-    text = text.gsub(/#{topic.name}/i, '________').gsub(/\[[0-9]\]/, "")
+    text = text.gsub(/#{topic.name}/i, '________').gsub(/\[[0-9]\]/, "").gsub(/\[citation needed\]/i, "")
     return text
   end
 

@@ -9,6 +9,7 @@ gem 'scrapi', '1.2.0'
 gem 'mysql2', '< 0.3'
 
 gem 'delayed_job'
+gem 'rabl'
 
 # Use unicorn as the web server
 # gem 'unicorn'
