@@ -187,7 +187,7 @@ class TopicsController < ApplicationController
     if @term
       @topic = Topic.find_by_id(@term.topic_id)
       if @topic.description
-        @fill_in_blank = fill_in_blank(@topic)
+        @fill_in_blank = to_question(@topic)
         @choices = answers(@topic, @fill_in_blank)
       end
     end
@@ -204,103 +204,72 @@ class TopicsController < ApplicationController
   private
 
   def answers(topic, blanked)
-    @wrong = []
+
+    #build buckets
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
-    desc_words = blanked.split(' ')
+    desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/,'').split(' ')
     cat_buckets = []
-    @topics.cats.each do |c|
-      cat_buckets.push([0, c.name, c.id])
-    end
-    topic.name.split(' ').each do |n|
-      desc_words.push(n)
-    end
+    @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
+    topic.name.split(' ').each {|n| desc_words.push(n)}
 
-    desc_words.each do |w|
-      cat_buckets.each do |b|
-        if b[1] =~ /#{w.gsub('(','').gsub(')','')}/i && w.length > 3
-          b[0]+=1
-        end
+    desc_words.each do |desc_word|
+      cat_buckets.each do |bucket|
+        bucket[:rel] += 1 if bucket[:cat].name =~ /#{desc_word}/i and desc_word.length > 3
       end
     end
-    puts desc_words.inspect
-    puts cat_buckets.inspect
-    
-    max_score = 0
-    cat_buckets.each do |b|
-      words = b[1].split(' ')
-      if b[1] =~ /#{topic.name}/i
-        score=0.0
+
+    # rate bucket relevance
+    cat_buckets.each do |bucket|
+      words = bucket[:cat].name.split(' ')
+      if bucket[:cat].name =~ /#{topic.name}/i
+        bucket[:rel] = 0.0
       else
-        score = b[0] / words.size.to_f
+        bucket[:rel] = bucket[:rel] / words.size.to_f
       end
-      b[0] = score
-      if score>max_score
-        max_score=score
-      end
-      puts b[1] +":  "+ b[0].to_s
     end
-    cat_buckets.each do |b|
-      if max_score==0
-        if b[1] =~ /#{topic.name}/i
-          @topics.cats.each do |c|
-            if c.id == b[2]
-              puts "Pulling answers from: "+ c.name
-              c.topics.each do |t|
-                tname = t.name
-                unless tname.index('(').nil?
-                  tname.slice!(tname.index('(')..(tname.size-1))
-                end
-                @choices.push(t.name)
-              end
-            end
-          end
-        end
+
+    # filter order and draw from buckets
+    cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
+    cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
+    cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
+    cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
+
+    choices = Set.new([topic.name])
+    cat_buckets.each do |bucket|
+      bucket[:cat].topics.limit(3).all.each do |rel_topic|
+        choices.add rel_topic.name
+        break if choices.length == 4
+      end
+    end
+
+    return choices.to_a
+  end
+
+  def to_question(topic)
+
+    get_text = Scraper.define do
+      process "p", :just_text => :text
+      result :just_text
+    end
+
+    text = "Error"
+    begin
+      raw_text = get_text.scrape(topic.description)
+      raw_text.gsub! /\[[^]*]\]/, ""
+      first_sent = raw_text.split(/\.\s*[A-Z]|\.$/)[0]
+      chunks = first_sent.split(/ (is|are|was|were|refers to|comprises) /)
+
+      if chunks[1] == "refers to"
+        question_word = "What "
       else
-        if b[0]>= max_score
-          @topics.cats.each do |c|
-            if c.id == b[2]
-              puts "Pulling answers from: "+ c.name
-              c.topics.each do |t|
-                tname = t.name
-                unless tname.index('(').nil?
-                  tname.slice!(tname.index('(')..(tname.size-1))
-                end
-                @choices.push(t.name)
-              end
-            end
-          end
-        end
+        question_word = "Which "
       end
+      text = question_word + chunks[1..(chunks.length - 1)].join(" ") + "?"
+
+    rescue
     end
 
-    while @choices.size < 4
-      rando_cat = @topics.cats.offset(rand(@topics.cats.count)).first
-      rando_top = rando_cat.topics.offset(rand(rando_cat.topics.count)).first
-      x = @choices.index rando_top.name
-      if x.nil?
-        @choices.push(rando_top.name)
-      end
-    end
-    mc = []
-    mc[0] = @topic.name
-    i = 1
-    while i<4
-      wrong = nil
-      while wrong.nil?
-        wrong = @choices[rand(@choices.size)]
-        x= mc.index wrong
-        if wrong[0..4] == 'User:'
-          puts wrong
-          x = nil
-        end
-        if x.nil? && wrong.length > 0
-          mc[i] = wrong
-          i+=1
-        end
-      end
-    end
-
-    return mc
+    return text
   end
 
   def fill_in_blank(topic)
