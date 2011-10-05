@@ -81,7 +81,6 @@ class TopicsController < ApplicationController
     @term = Term.find_by_term(human_name)
     # fetch and save if no topic
     if @term.nil?
-      puts 'TERM NIL'
       found = false
       name_stack = create_name_stack(params[:name])
       until found
@@ -201,6 +200,16 @@ class TopicsController < ApplicationController
     end
   end
 
+  def destroy
+    @topic = Topic.find(params[:id])
+    @topic.destroy
+
+    respond_to do |format|
+      format.html { redirect_to(lists_url) }
+      format.xml  { head :ok }
+    end
+  end
+
   private
 
   def answers(topic, blanked)
@@ -238,7 +247,7 @@ class TopicsController < ApplicationController
     cat_buckets.each do |bucket|
       bucket[:cat].topics.limit(3).all.each do |rel_topic|
         choices.add rel_topic.name
-        break if choices.length == 4
+        break if choices.length == 10
       end
     end
 

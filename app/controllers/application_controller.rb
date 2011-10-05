@@ -7,4 +7,8 @@ class ApplicationController < ActionController::Base
     headers['Access-Control-Allow-Origin'] = '*'
     headers['Access-Control-Request-Method'] = '*'
   end
+
+  helper :all
+  helper_method :gget
+  
 end

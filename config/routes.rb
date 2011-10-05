@@ -1,4 +1,6 @@
 Wikiscrape::Application.routes.draw do
+  resources :lists
+
   resources :links
 
   resources :cats
@@ -22,7 +24,9 @@ Wikiscrape::Application.routes.draw do
   # This route can be invoked with purchase_url(:id => product.id)
 
   # Sample resource route (maps HTTP verbs to controller actions automatically):
-  #   resources :products
+  resources :lists
+  resources :terms
+  resources :topics
 
   # Sample resource route with options:
   #   resources :products do

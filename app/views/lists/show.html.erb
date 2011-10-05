@@ -1,0 +1,37 @@
+<p id="notice"><%= notice %></p>
+
+<%#*<p>%>
+  <%#*<b>Csv:</b>%>
+  <%#= @list.csv.gsub(/(?:\n|\r)+/, ", ").html_safe %>
+<%#*</p>%>
+
+<%
+
+#hit_count =
+
+
+%>
+
+<p>
+  <b>Topic:</b>
+  <% @questions.each_with_index do |q, i| %>
+    <p>
+      <% @term = Term.find_by_term(q[:term]) %>
+      <b><%= q[:term]  %></b> 
+      <%= link_to '[Destroy term]', @term, :method => :delete, :remote => true if @term %>
+      <%= link_to '[Destroy topic]', q[:topic], :method => :delete, :remote => true if q[:topic] %>
+      <% next if q[:topic].nil? %>
+
+      <p><%= "#{i+1}) #{q[:question]}" unless q.nil? %></p>
+      -<em><%= q[:topic].name %></em><br />
+
+      <% if q[:answers].length > 1 %>
+        <% q[:answers].each do |a| %>
+          <br />-<%= a %>
+        <% end %>
+      <% end %>
+    </p>
+
+    <%= q[:errors].to_yaml  %>
+  <% end %>
+</p>
