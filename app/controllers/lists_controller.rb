@@ -110,25 +110,12 @@ class ListsController < ApplicationController
     human_name = name.gsub("_", " ")
     @term = Term.find_by_term(human_name)
     @topic = Topic.find_by_id(@term.topic_id) if @term
-
+    puts "Lookup Started"
     # fetch and save if no topic
     if @term.nil? or @topic.nil?
-
+      puts "Term not found"
       #look for a wiki article that hits
-      found = false
-      name_stack = create_name_stack(name)
-      until found
-        begin
-          found = true
-          unless name_stack.empty?
-            @good_name = name_stack.pop
-            @n = quick_lookup(@good_name)
-          end
-        rescue
-          found = false
-          @errors << "rescue slow_lookup:quick_lookup failure"
-        end
-      end
+      get_wiki_article_name(name)
 
       @topic = Topic.find_by_name(@n)
       if @topic.nil? or @topic.description.nil?
@@ -264,7 +251,9 @@ class ListsController < ApplicationController
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
     choices = Set.new([topic.name])
+    puts "CHOOSING ANSWERS!"
     cat_buckets.each do |bucket|
+      puts bucket[:cat].inspect
       bucket[:cat].topics.limit(3).all.each do |rel_topic|
         choices.add rel_topic.name
         break if choices.length == 10
@@ -303,12 +292,30 @@ class ListsController < ApplicationController
     return text
   end
 
+  def get_wiki_article_name(name)
+    found = false
+      name_stack = create_name_stack(name)
+      until found
+        begin
+          found = true
+          unless name_stack.empty?
+            @good_name = name_stack.pop
+            @n = quick_lookup(@good_name)
+          end
+        rescue
+          found = false
+          @errors << "rescue slow_lookup:quick_lookup failure"
+        end
+      end
+  end
+
   def quick_lookup(n)
     qwiki = Scraper.define do
       process "#firstHeading", :name => :text
       result  :name
     end
     article = qwiki.scrape(URI.parse("http://en.wikipedia.org/wiki/#{n}"))
+    puts "CHECK ARTICLE"
     return article
   end
 
@@ -342,32 +349,29 @@ class ListsController < ApplicationController
       array :catlinks
 
       i = 0
-      process "#bodyContent >p", :description=>:element do |element|
+      process "#bodyContent p", :description=>:element do |element|
         description_index = i if ((element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><b/) == 0 or (element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><i><b/) == 0) and not description_index
         i += 1
       end
       process "#firstHeading", :name => :text
       process ".infobox img, .thumb img", :image => "@src"
-      process "#bodyContent>ul>li>a", :follow => "@href"
-      process "#catlinks span a", :catlinks => :text
+      process "#bodyContent ul >li >a", :follow => "@href"
+      process "#mw-normal-catlinks >ul >li >a", :catlinks => :text
       process "body", :all => :text
 #      process "a", :catlinks => :text
-
-      result  :name, :image, :description, :follow, :catlinks, :all
+      result  :name, :image, :follow, :catlinks, :all, :description
     end
 
-    begin
+#    begin
     puts "http://en.wikipedia.org/wiki/#{name}"
     
       article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
       article.description = article.description[description_index..-1]
 
-    rescue
-      @errors << "rescue lookup can't lookup term"
-      return
-    end
-
-    puts article.description
+#    rescue
+#      @errors << "rescue lookup can't lookup term"
+#      return
+#    end
 
     # follow "may refer to:"
     if article.description and article.description.size > 0 and (article.description[description_index] =~ /may refer to:$/)
@@ -382,7 +386,7 @@ class ListsController < ApplicationController
 
     wiki_cat = Scraper.define do
       array :names
-      process "#mw-pages li a", :names => :text
+      process "#mw-pages li >a", :names => :text
       result  :names
     end
 
@@ -392,7 +396,10 @@ class ListsController < ApplicationController
     rescue
       @errors << "rescue cat_lookup:topic_names"
     end
-
+    puts "CATEGORY IS " + name.to_s
+    topic_names.each do |t|
+      puts t
+    end
     return topic_names
   end
 
