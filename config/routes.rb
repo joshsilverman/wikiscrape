@@ -11,6 +11,7 @@ Wikiscrape::Application.routes.draw do
   match "/topics/index"
   match "/cats/index" => "cats#index"
   match "topics/test/:name" => "topics#test"
+  match "/cat_lookup/:name" => "lists#category_lookup"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.
