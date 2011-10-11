@@ -13,7 +13,11 @@ development:
   pool: 5
   username: root
   password:
-  socket: /var/run/mysqld/mysqld.sock
+  socket: <%= ['/tmp/mysql.sock', 
+       '/opt/local/var/run/mysql5/mysqld.sock', # darwinports
+         '/opt/local/var/run/mysqld/mysqld.sock', # darwinports, again
+         '/var/run/mysqld/mysqld.sock',           # ubuntu/debian
+         '/var/mysql/mysql.sock'].select { |f| File.exist? f }.first %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
