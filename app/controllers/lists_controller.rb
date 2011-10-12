@@ -105,6 +105,27 @@ class ListsController < ApplicationController
     end
   end
 
+
+  ## THIS IS NOT A REAL METHOD!!! JUST A CSV EXPORT EXAMPLE ##
+  def export_list_to_csv
+    @list = List.find_by_id(params[:id])
+    return if @list.nil?
+    csv_string = FasterCSV.generate do |csv|
+      # header row 
+      csv << ["term", "definition", "question", "incorrect answers"]
+
+      # data rows
+      @users.each do |user|
+        csv << [user.id, user.first_name, user.last_name]
+      end
+    end
+
+    # send it to the browsah
+    send_data csv_string,
+              :type => 'text/csv; charset=iso-8859-1; header=present',
+              :disposition => "attachment; filename=users.csv"
+  end
+
   private
 
   def slow_lookup name
@@ -132,6 +153,9 @@ class ListsController < ApplicationController
         if @topic.nil?
           temp= topic_details[:description][0].to_s
           topic_details[:description][0] = temp.gsub("—", "-").split('').find_all {|c| (0x00..0x7f).include? c.ord }.join('')
+          puts "TEMP ="
+          puts temp
+          # topic_details[:description][0] = temp.split('').find_all {|c| (0x00..0x7f).include? c.ord }.join('')
           @topic = Topic.create(
             :name => (topic_details[:name] if topic_details[:name]),
             :img_url => (topic_details[:image][0] if topic_details[:image]),
@@ -277,10 +301,14 @@ class ListsController < ApplicationController
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
     choices = Set.new([topic.name])
     cat_buckets.each do |bucket|
+<<<<<<< HEAD
       bucket[:cat].topics.each do |topic|
         puts topic.name
       end
+=======
+>>>>>>> 7d16775854aed77e8ad87baf015b1d5abb99ef32
       bucket[:cat].topics.limit(3).all.each do |rel_topic|
+        puts rel_topic.name
         choices.add rel_topic.name
         break if choices.length == 10
       end
@@ -352,6 +380,7 @@ class ListsController < ApplicationController
     end
     article = qwiki.scrape(URI.parse("http://en.wikipedia.org/wiki/#{n}"))
     puts "CHECK ARTICLE"
+    puts article
     return article
   end
 
@@ -401,13 +430,25 @@ class ListsController < ApplicationController
    begin
     puts "http://en.wikipedia.org/wiki/#{name}"
     
+<<<<<<< HEAD
     article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
     article.description = article.description[description_index..-1]
+=======
+      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
+      puts description_index
+      article.description = article.description[description_index..-1]
+>>>>>>> 7d16775854aed77e8ad87baf015b1d5abb99ef32
 
    rescue
      @errors << "rescue lookup can't lookup term"
      return
    end
+
+    puts article.name
+    puts article.image.to_json
+    puts article.follow.to_json
+    puts article.catlinks.to_json
+    puts article.description[0]
 
     # follow "may refer to:"
     if article.description and article.description.size > 0 and (article.description[description_index] =~ /may refer to:$/)
@@ -432,10 +473,7 @@ class ListsController < ApplicationController
     rescue
       @errors << "rescue cat_lookup:topic_names"
     end
-    puts "CATEGORY IS " + name.to_s
-    topic_names.each do |t|
-      puts t
-    end
+
     return topic_names
   end
 
