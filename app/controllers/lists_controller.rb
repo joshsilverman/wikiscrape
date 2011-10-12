@@ -1,4 +1,8 @@
 class ListsController < ApplicationController
+
+
+
+
   # GET /lists
   # GET /lists.xml
   def index
@@ -53,8 +57,7 @@ class ListsController < ApplicationController
 
       @topic = slow_lookup(term)
       if @topic
-        puts @topic.description
-        @questions[i][:question] = to_question(@topic)
+        @questions[i][:question] = to_question(@topic)      
         @questions[i][:answers] = false_answers @topic, @questions[i][:question]
         @questions[i][:topic] = @topic
         @questions[i][:errors] = @errors
@@ -76,8 +79,6 @@ class ListsController < ApplicationController
 #    end
   end
 
-  # PUT /lists/1
-  # PUT /lists/1.xml
   def update
     @list = List.find(params[:id])
 
@@ -130,7 +131,7 @@ class ListsController < ApplicationController
 
         if @topic.nil?
           temp= topic_details[:description][0].to_s
-          topic_details[:description][0] = temp.split('').find_all {|c| (0x00..0x7f).include? c.ord }.join('')
+          topic_details[:description][0] = temp.gsub("—", "-").split('').find_all {|c| (0x00..0x7f).include? c.ord }.join('')
           @topic = Topic.create(
             :name => (topic_details[:name] if topic_details[:name]),
             :img_url => (topic_details[:image][0] if topic_details[:image]),
@@ -139,7 +140,6 @@ class ListsController < ApplicationController
         end
 
         topic_details[:catlinks].each do |cat_name|
-
           @cat = Cat.find_by_name(cat_name)
           Cat.transaction do
             if not @cat
@@ -199,6 +199,7 @@ class ListsController < ApplicationController
           end
         end
       end
+
     end
 
     return @topic
@@ -221,20 +222,43 @@ class ListsController < ApplicationController
 
   def false_answers(topic, blanked)
 
+    # Linguistics::use( :en )
+    # tgr = EngTagger.new
+    # text = "Alice chased the big fat cat."
+
+    # # Add part-of-speech tags to text
+    # tagged = tgr.add_tags(text)
+    # puts tagged
+    
+    # puts Linguistics::EN.has_wordnet?
+
     #build buckets
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
-    desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/,'').split(' ')
+    desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
+
+    # Remove parenthesis
+
+    # Check POS
+
+    # Check number
+
+    # Check 
+
+    # Check Wordnet
+
+
     cat_buckets = []
     @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
     topic.name.split(' ').each {|n| desc_words.push(n)}
 
+    # For each word in the question, check if it is in the category title text, if so, augment its relevance score
     desc_words.each do |desc_word|
       cat_buckets.each do |bucket|
         bucket[:rel] += 1 if bucket[:cat].name =~ /#{desc_word}/i and desc_word.length > 3
       end
     end
 
-    # rate bucket relevance
+    # Check to make sure its not an identical match, then normalize bucket relevance by dividing by the number of words
     cat_buckets.each do |bucket|
       words = bucket[:cat].name.split(' ')
       if bucket[:cat].name =~ /#{topic.name}/i
@@ -244,21 +268,32 @@ class ListsController < ApplicationController
       end
     end
 
-    # filter order and draw from buckets
+    # Eliminate irrelevant buckets, sort by relevance
     cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
     cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
     cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
+    # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
     choices = Set.new([topic.name])
-    puts "CHOOSING ANSWERS!"
     cat_buckets.each do |bucket|
-      puts bucket[:cat].inspect
+      bucket[:cat].topics.each do |topic|
+        puts topic.name
+      end
       bucket[:cat].topics.limit(3).all.each do |rel_topic|
         choices.add rel_topic.name
         break if choices.length == 10
       end
     end
+
+    puts "GENERATING FALSE ANSWERS:\n"
+    puts "Question: #{blanked}"
+    puts "Topic: #{topic.name}"
+    puts "Wrong answers: "
+    choices.to_a.each do |choice|
+      puts "  - #{choice}"
+    end
+    puts "\n\n"
 
     return choices.to_a
   end
@@ -284,6 +319,7 @@ class ListsController < ApplicationController
       else
         question_word = "Which "
       end
+
       text = (question_word + chunks[1..(chunks.length - 1)].join(" ")).gsub(/^\s+|\s+$/, '') + "?"
     rescue
       @errors << "to_question failed to scrape topic description. Description: #{raw_text}"
@@ -362,16 +398,16 @@ class ListsController < ApplicationController
       result  :name, :image, :follow, :catlinks, :all, :description
     end
 
-#    begin
+   begin
     puts "http://en.wikipedia.org/wiki/#{name}"
     
-      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
-      article.description = article.description[description_index..-1]
+    article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
+    article.description = article.description[description_index..-1]
 
-#    rescue
-#      @errors << "rescue lookup can't lookup term"
-#      return
-#    end
+   rescue
+     @errors << "rescue lookup can't lookup term"
+     return
+   end
 
     # follow "may refer to:"
     if article.description and article.description.size > 0 and (article.description[description_index] =~ /may refer to:$/)
