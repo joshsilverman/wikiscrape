@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110929185820) do
+ActiveRecord::Schema.define(:version => 20111011235728) do
 
   create_table "cats", :force => true do |t|
     t.string   "name"
@@ -41,6 +41,13 @@ ActiveRecord::Schema.define(:version => 20110929185820) do
 
   add_index "delayed_jobs", ["priority", "run_at"], :name => "delayed_jobs_priority"
 
+  create_table "documents", :force => true do |t|
+    t.text     "csv"
+    t.integer  "topic_identifier_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "links", :force => true do |t|
     t.integer  "topic_id"
     t.integer  "ref_id"
@@ -57,6 +64,14 @@ ActiveRecord::Schema.define(:version => 20110929185820) do
   create_table "terms", :force => true do |t|
     t.string   "term"
     t.integer  "topic_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "topic_identifiers", :force => true do |t|
+    t.string   "name"
+    t.integer  "topic_id"
+    t.boolean  "is_disambiguation"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
