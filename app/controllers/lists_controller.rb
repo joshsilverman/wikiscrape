@@ -258,6 +258,7 @@ class ListsController < ApplicationController
 
     #build buckets
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
+
     desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
     # Remove parenthesis
@@ -301,12 +302,9 @@ class ListsController < ApplicationController
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
     choices = Set.new([topic.name])
     cat_buckets.each do |bucket|
-<<<<<<< HEAD
       bucket[:cat].topics.each do |topic|
         puts topic.name
       end
-=======
->>>>>>> 7d16775854aed77e8ad87baf015b1d5abb99ef32
       bucket[:cat].topics.limit(3).all.each do |rel_topic|
         puts rel_topic.name
         choices.add rel_topic.name
@@ -429,16 +427,8 @@ class ListsController < ApplicationController
 
    begin
     puts "http://en.wikipedia.org/wiki/#{name}"
-    
-<<<<<<< HEAD
     article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
     article.description = article.description[description_index..-1]
-=======
-      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
-      puts description_index
-      article.description = article.description[description_index..-1]
->>>>>>> 7d16775854aed77e8ad87baf015b1d5abb99ef32
-
    rescue
      @errors << "rescue lookup can't lookup term"
      return
