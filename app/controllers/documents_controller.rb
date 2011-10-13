@@ -88,29 +88,6 @@ class DocumentsController < ApplicationController
     @document = Document.find_by_id(params[:id])
     return if @document.nil?
 
-    csv_string = FasterCSV.generate do |csv|
-      csv << ["term", "definition", "question", "incorrect answers"]
-      puts csv.inspect
-
-      # data rows
-      @document.topic_identifiers.each do |ti|
-        topic = Topic.find_by_id(ti.topic_id)
-        answers = Answer.where("topic_id = ?",ti.topic_id)
-        next if topic.nil?
-        row = ["#{ti.name}", "#{topic.description}", "#{topic.question}"]
-        #puts row
-        #puts answers
-        unless answers.nil?
-          answers.each do |a|
-            row << "#{a.name}"
-          end
-        end
-        #puts "Generated Row:"
-        #puts row
-        csv << row
-      end
-    end
-
     csv_string_test = FasterCSV.generate do |csv|
       csv << ["term", "definition", "question", "incorrect answers"]
 
@@ -118,7 +95,8 @@ class DocumentsController < ApplicationController
         topic = Topic.find_by_id(ti.topic_id)
         answers = Answer.where("topic_id = ?",ti.topic_id)
         next if topic.nil?
-        row = [ti.name, "test", topic.question]
+
+        row = [ti.name, clean_markup_from_desc(topic.description), topic.question]
         unless answers.nil?
           answers.each do |a|
             row << a.name
@@ -132,5 +110,26 @@ class DocumentsController < ApplicationController
     send_data csv_string_test,
               :type => 'text/csv; charset=iso-8859-1; header=present',
               :disposition => "attachment; filename=#{params[:file_name]}.csv"
+  end
+
+  private
+
+  def clean_markup_from_desc(str)
+    get_text = Scraper.define do
+      process "p", :just_text => :text
+      result :just_text
+    end
+
+    begin
+      raw_text = get_text.scrape(str)
+      raw_text.gsub! /\<[^>]*>\]/, ""
+      raw_text.gsub! /\[[^]*]\]/, ""
+      raw_text.gsub! /\([^)]*\)/, ""
+      raw_text.gsub!(" ,", ",")
+    rescue
+      raw_text =  "ERROR!!"
+    end
+
+    return raw_text
   end
 end
