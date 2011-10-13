@@ -13,6 +13,7 @@ Wikiscrape::Application.routes.draw do
   match "/cats/index" => "cats#index"
   match "topics/test/:name" => "topics#test"
   match "/cat_lookup/:name" => "lists#category_lookup"
+  match "/to_csv/:id/:file_name" => "documents#export_document_to_csv"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

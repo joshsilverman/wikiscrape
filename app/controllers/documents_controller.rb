@@ -87,19 +87,50 @@ class DocumentsController < ApplicationController
   def export_document_to_csv
     @document = Document.find_by_id(params[:id])
     return if @document.nil?
+
     csv_string = FasterCSV.generate do |csv|
-      # header row
       csv << ["term", "definition", "question", "incorrect answers"]
+      puts csv.inspect
 
       # data rows
-      @users.each do |user|
-        csv << [user.id, user.first_name, user.last_name]
+      @document.topic_identifiers.each do |ti|
+        topic = Topic.find_by_id(ti.topic_id)
+        answers = Answer.where("topic_id = ?",ti.topic_id)
+        next if topic.nil?
+        row = ["#{ti.name}", "#{topic.description}", "#{topic.question}"]
+        #puts row
+        #puts answers
+        unless answers.nil?
+          answers.each do |a|
+            row << "#{a.name}"
+          end
+        end
+        #puts "Generated Row:"
+        #puts row
+        csv << row
+      end
+    end
+
+    csv_string_test = FasterCSV.generate do |csv|
+      csv << ["term", "definition", "question", "incorrect answers"]
+
+     @document.topic_identifiers.each do |ti|
+        topic = Topic.find_by_id(ti.topic_id)
+        answers = Answer.where("topic_id = ?",ti.topic_id)
+        next if topic.nil?
+        row = [ti.name, "test", topic.question]
+        unless answers.nil?
+          answers.each do |a|
+            row << a.name
+          end
+        end
+        csv << row
       end
     end
 
     # send it to the browsah
-    send_data csv_string,
+    send_data csv_string_test,
               :type => 'text/csv; charset=iso-8859-1; header=present',
-              :disposition => "attachment; filename=users.csv"
+              :disposition => "attachment; filename=#{params[:file_name]}.csv"
   end
 end
