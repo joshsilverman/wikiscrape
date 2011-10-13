@@ -1,0 +1,21 @@
+<p id="notice"><%= notice %></p>
+
+<h2><%=@document.name%></h2>
+<p>
+  <%=@document.csv%>
+</p>
+<% @topic_identifiers.each do |ti| %>
+  <% topic = Topic.find(ti.topic_id) %>
+  <% question = Topic.to_question(topic) %>
+  <b><%= ti.name %></b><br />
+  <p>
+    <%= question  %>
+  </p>
+  <ul>
+    <% wrong = Topic.false_answers(topic, question) %>
+    <% wrong.each do |w| %>
+    <li><%= w %></li>
+    <%  end %>
+  </ul>
+<%end%>
+
