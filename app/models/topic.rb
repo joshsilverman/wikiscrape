@@ -64,12 +64,12 @@ class Topic < ActiveRecord::Base
   end
 
   def build_q_and_a
-    puts "BUIling..."
+    puts "BUILDing..."
     question = ""
-    question = Topic.to_question(self) if self.question.nil?
+    question = self.to_question if self.question.nil?
     if question.length > 10
       self.update_attribute(:question, question)
-      answers = Topic.false_answers(self, question)
+      answers = self.false_answers
       if answers.size>1
         answers.each do |answer|
           Answer.find_or_create_by_name_and_topic_id(answer, self.id)
@@ -79,9 +79,9 @@ class Topic < ActiveRecord::Base
   end
 
   private
-  def self.to_question(topic)
+  def to_question
 
-    raw_text = topic.description
+    raw_text = self.description
 
     # get_text = Scraper.define do
     #   process "p", :just_text => :text
@@ -112,13 +112,13 @@ class Topic < ActiveRecord::Base
     return text
   end
 
-  def self.false_answers(topic, blanked)
-    @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
-    desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
+  def false_answers
+    @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
+    desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
     cat_buckets = []
     @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
-    topic.name.split(' ').each {|n| desc_words.push(n)}
+    self.name.split(' ').each {|n| desc_words.push(n)}
 
     # For each word in the question, check if it is in the category title text, if so, augment its relevance score
     desc_words.each do |desc_word|
@@ -130,7 +130,7 @@ class Topic < ActiveRecord::Base
     # Check to make sure its not an identical match, then normalize bucket relevance by dividing by the number of words
     cat_buckets.each do |bucket|
       words = bucket[:cat].name.split(' ')
-      if bucket[:cat].name =~ /#{topic.name}/i
+      if bucket[:cat].name =~ /#{self.name}/i
         bucket[:rel] = 0.0
       else
         bucket[:rel] = bucket[:rel] / words.size.to_f
@@ -144,20 +144,20 @@ class Topic < ActiveRecord::Base
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
-    choices = Set.new() #[topic.name]
+    choices = Set.new() #[self.name]
     cat_buckets.each do |bucket|
       scored_topics = []
       puts "Checking category #{bucket[:cat].name}"  
       bucket[:cat].topics.each do |top|
         # Remove parenthesis
         top.name = top.name.gsub /\([^)]*\)/, ""
-        next if topic.name.strip == top.name.strip
+        next if self.name.strip == top.name.strip
         @votes = 0
         # Check if word ending and beginning the same
-        @votes += 1 if matching_word_endings?(topic.name, top.name) 
-        @votes += 1 if matching_word_beginnings?(topic.name, top.name)
+        @votes += 1 if matching_word_endings?(self.name, top.name)
+        @votes += 1 if matching_word_beginnings?(self.name, top.name)
         # Check if same number of words
-        @votes += 1 if topic.name.split(" ").length == top.name.split(" ").length
+        @votes += 1 if self.name.split(" ").length == top.name.split(" ").length
         scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
       end
       scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
@@ -177,8 +177,8 @@ class Topic < ActiveRecord::Base
     end
 
     puts "GENERATING FALSE ANSWERS:\n"
-    puts "Question: #{blanked}"
-    puts "Topic: #{topic.name}"
+    puts "Question: #{self.question}"
+    puts "Topic: #{self.name}"
     puts "Wrong answers: "
     choices.to_a.each do |choice|
       puts "  - #{choice}"
