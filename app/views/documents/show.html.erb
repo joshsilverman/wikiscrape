@@ -3,6 +3,7 @@
 <h2><%=@document.name%></h2>
 <br /><hr /><br />
 <% @topic_identifiers.each do |ti| %>
+  <% next if ti.is_disambiguation %>
   <div>
     <%= form_for ti.topic do |form| %>
       

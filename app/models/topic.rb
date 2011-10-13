@@ -64,6 +64,7 @@ class Topic < ActiveRecord::Base
   end
 
   def build_q_and_a
+    puts "BUIling..."
     question = ""
     question = Topic.to_question(self) if self.question.nil?
     if question.length > 10
@@ -80,17 +81,19 @@ class Topic < ActiveRecord::Base
   private
   def self.to_question(topic)
 
-    get_text = Scraper.define do
-      process "p", :just_text => :text
-      result :just_text
-    end
+    raw_text = topic.description
+
+    # get_text = Scraper.define do
+    #   process "p", :just_text => :text
+    #   result :just_text
+    # end
 
     text = "Error"
     begin
-      raw_text = get_text.scrape(topic.description)
-      raw_text.gsub! /\<[^>]*>\]/, ""
-      raw_text.gsub! /\[[^]*]\]/, ""
-      raw_text.gsub! /\([^)]*\)/, ""
+      # raw_text = get_text.scrape(topic.description)
+      # raw_text.gsub! /\<[^>]*>\]/, ""
+      # raw_text.gsub! /\[[^]*]\]/, ""
+      # raw_text.gsub! /\([^)]*\)/, ""
       first_sent = raw_text.split(/\.\s*"?[A-Z]|\.$/)[0]
       chunks = first_sent.split(/ (is|are|was|were|refers to|comprises) /)
 
@@ -110,32 +113,8 @@ class Topic < ActiveRecord::Base
   end
 
   def self.false_answers(topic, blanked)
-
-    # Linguistics::use( :en )
-    # tgr = EngTagger.new
-    # text = "Alice chased the big fat cat."
-
-    # # Add part-of-speech tags to text
-    # tagged = tgr.add_tags(text)
-    # puts tagged
-
-    # puts Linguistics::EN.has_wordnet?
-
-    #build buckets
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
-
     desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
-
-    # Remove parenthesis
-
-    # Check POS
-
-    # Check number
-
-    # Check
-
-    # Check Wordnet
-
 
     cat_buckets = []
     @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
@@ -167,14 +146,34 @@ class Topic < ActiveRecord::Base
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
     choices = Set.new() #[topic.name]
     cat_buckets.each do |bucket|
-      bucket[:cat].topics.each do |topic|
-        puts topic.name
+      scored_topics = []
+      puts "Checking category #{bucket[:cat].name}"  
+      bucket[:cat].topics.each do |top|
+        # Remove parenthesis
+        top.name = top.name.gsub /\([^)]*\)/, ""
+        next if topic.name.strip == top.name.strip
+        @votes = 0
+        # Check if word ending and beginning the same
+        @votes += 1 if matching_word_endings?(topic.name, top.name) 
+        @votes += 1 if matching_word_beginnings?(topic.name, top.name)
+        # Check if same number of words
+        @votes += 1 if topic.name.split(" ").length == top.name.split(" ").length
+        scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
       end
-      bucket[:cat].topics.limit(3).all.each do |rel_topic|
-        puts rel_topic.name
-        choices.add rel_topic.name
-        break if choices.length == 10
-      end
+      scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
+
+      for i in (0..2) do
+        next if choices.length >= 10
+        choices.add scored_topics.pop[:topic]
+      end      
+      # bucket[:cat].topics.each do |topic|
+      #   puts topic.name
+      # end
+      # bucket[:cat].topics.limit(3).all.each do |rel_topic|
+      #   puts rel_topic.name
+      #   choices.add rel_topic.name
+      #   break if choices.length == 10
+      # end
     end
 
     puts "GENERATING FALSE ANSWERS:\n"
@@ -187,6 +186,16 @@ class Topic < ActiveRecord::Base
     puts "\n\n"
 
     return choices.to_a
+  end
+
+  def self.matching_word_endings?(base, compare)
+    return true if base.strip[-3, 3] == compare.strip[-3, 3]
+    return false
+  end
+
+  def self.matching_word_beginnings?(base, compare)
+    return true if base.strip[0..2] == compare.strip[1..2]
+    return false
   end
 
   def self.quick_lookup(n)
