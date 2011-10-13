@@ -36,7 +36,8 @@ class Document < ActiveRecord::Base
               #otherwise update the topic with new info and create identifier for it
               @topic.update_attributes(
                   :img_url => (full_topic[:image][0] if full_topic[:image]),
-                  :description => (full_topic[:description][0] if full_topic[:description]))
+                  :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
+                  :blanked => full_topic[:description][0])
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
               Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
@@ -52,7 +53,8 @@ class Document < ActiveRecord::Base
               @topic = Topic.create(
                   :name => (full_topic[:name] if full_topic[:name]),
                   :img_url => (full_topic[:image][0] if full_topic[:image]),
-                  :description => (full_topic[:description][0] if full_topic[:description]))
+                  :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
+                  :blanked => full_topic[:description][0])
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
               Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
@@ -75,7 +77,8 @@ class Document < ActiveRecord::Base
             #otherwise update the topic with new info and create identifier for it
             @topic.update_attributes(
                 :img_url => (full_topic[:image][0] if full_topic[:image]),
-                :description => (full_topic[:description][0] if full_topic[:description]))
+                :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
+                :blanked => full_topic[:description][0])
             Cat.add_categories(full_topic[:catlinks])
             @topic.build_q_and_a
           end
@@ -83,5 +86,24 @@ class Document < ActiveRecord::Base
       end
     end
   end
+
+  def self.clean_markup_from_desc(str)
+    get_text = Scraper.define do
+      process "p", :just_text => :text
+      result :just_text
+    end
+
+    begin
+      raw_text = get_text.scrape(str)
+      raw_text.gsub! /\<[^>]*>\]/, ""
+      raw_text.gsub! /\[[^]*]\]/, ""
+      raw_text.gsub! /\([^)]*\)/, ""
+      raw_text.gsub!(" ,", ",")
+    rescue
+      raw_text =  "ERROR!!"
+    end
+
+    return raw_text
+  end 
   
 end

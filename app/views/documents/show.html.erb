@@ -1,27 +1,29 @@
 <p id="notice"><%= notice %></p>
 
 <h2><%=@document.name%></h2>
-<p>
-  <%=@document.csv%>
-</p>
+<br /><hr /><br />
 <% @topic_identifiers.each do |ti| %>
-  <b><%= ti.name %> disambiguation:<%=ti.is_disambiguation%></b><br />
-  <% next if ti.topic_id.nil? %>
-  <% topic = Topic.find(ti.topic_id) %>
-  <% next if topic.nil? %>
-  <p>
-    <%  if topic.question %>
-      <%= topic.question %>
-    <% else %>
-    <em>No question made for this topic</em>
-    <% end %>
+  <% next if ti.is_disambiguation %>
+  <div>
+    <%= form_for ti.topic do |form| %>
+      
+      <%= form.label "Term" %>
+      <%= form.text_field :name %><br /><br />
 
-  </p>
-  <ul>
-    <% wrong = Answer.where("topic_id = ?", topic.id) %>
-    <% wrong.each do |w| %>
-    <li><%= w.name %></li>
-    <%  end %>
-  </ul>
+      <%= form.label "Using wikipedia entry: #{ti.topic.name}" %><br /><br />
+
+      <%= form.label "Definition" %>
+      <%= form.text_area :description, :rows=>8, :cols=>80 %><br /><br />
+
+      <%= form.label "Question (MC)" %>
+      <%= form.text_area :question, :rows=>4 %><br /><br />
+
+      <%= text_area @answers, :text, :value => @answers[ti.id] %>
+
+      <%= button_to "Update Topic" %><br /><br />
+
+      <br /><hr /><br />
+                
+    <%end%>
+  </div>
 <%end%>
-
