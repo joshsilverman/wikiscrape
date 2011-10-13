@@ -10,14 +10,16 @@ class Topic < ActiveRecord::Base
     article_name = nil
     while article_name.nil? and not name_stack.empty?
       temp_name = name_stack.pop
-      puts temp_name
       article_name = quick_lookup(temp_name)
+      puts "article"
       puts article_name
     end
     return article_name
   end
 
   def self.lookup_on_wiki(name)
+    puts "lookup on wiki"
+    name.gsub!(" ","_")
     description_index = nil
     wiki_article = Scraper.define do
       array :description
@@ -42,12 +44,12 @@ class Topic < ActiveRecord::Base
 
     begin
       article = nil
-      puts "http://en.wikipedia.org/wiki/#{name}"
+      puts "scraping http://en.wikipedia.org/wiki/#{name}"
       article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
       article.description = article.description[description_index..-1]
       article.disambig = false
     rescue
-      @errors << "rescue lookup can't lookup term"
+      puts "Error scraping!"
       return nil
     end
     puts article.description[0]
@@ -56,23 +58,26 @@ class Topic < ActiveRecord::Base
     disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
     article.disambig = true unless disambig.nil?
     article.all_html = nil
+    puts article.disambig
+    
     return article
   end
 
-  def self.build_q_and_a(topic)
+  def build_q_and_a
     question = ""
-    question = Topic.to_question(topic) if topic.question.nil?
+    question = Topic.to_question(self) if self.question.nil?
     if question.length > 10
-      topic.update_attribute(:question, question)
-      answers = Topic.false_answers(topic, question)
+      self.update_attribute(:question, question)
+      answers = Topic.false_answers(self, question)
       if answers.size>1
         answers.each do |answer|
-          Answer.find_or_create_by_name_and_topic_id(answer, topic.id)
+          Answer.find_or_create_by_name_and_topic_id(answer, self.id)
         end
       end
     end
   end
 
+  private
   def self.to_question(topic)
 
     get_text = Scraper.define do
@@ -184,18 +189,18 @@ class Topic < ActiveRecord::Base
     return choices.to_a
   end
 
-  private
-
   def self.quick_lookup(n)
     agent = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari'}
     agent.follow_meta_refresh = true
 
     begin
+      @redirect = nil
       page = agent.get("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no")
       page.search(".redirectText").each do |item|
         @redirect = item.at("a")[:href]
       end
     rescue
+      puts "redirect check rescued"
       @redirect = nil
     end
 

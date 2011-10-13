@@ -15,7 +15,6 @@ class Cat < ActiveRecord::Base
       topic_names = wiki_cat.scrape(URI.parse("http://en.wikipedia.org/wiki/Category:#{name.gsub(" ", "_")}"))
     rescue
       puts "Error in cat_lookup"
-      @errors << "rescue cat_lookup:topic_names"
     end
 
     return topic_names
