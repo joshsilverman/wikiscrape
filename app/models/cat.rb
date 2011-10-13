@@ -22,27 +22,25 @@ class Cat < ActiveRecord::Base
   end
 
   def self.add_categories(cat_names)
+    puts "ADD CATEGORIES"
     cat_names.each do |cat_name|
+      puts cat_name
       @cat = Cat.find_by_name(cat_name)
       Cat.transaction do
         if not @cat
           cats_topic_names = cat_lookup(cat_name)
           @cat = Cat.create!(:name => cat_name)
-          begin
-            cats_topic_names.each do |topic_name|
-              topic_identifier = TopicIdentifier.find_or_create_by_name(topic_name)
-              topic = find_by_name(topic_identifier.name)
-              if topic
-                topic_identifier.update_attribute(:topic_id, topic.id)
-                @cat.topics << topic
-              else
-                topic = Topic.create(:name => topic_name)
-                topic_identifier.update_attribute(:topic_id, topic.id)
-                @cat.topics << topic
-              end
+          cats_topic_names.each do |topic_name|
+            topic_identifier = TopicIdentifier.find_or_create_by_name(topic_name)
+            topic = Topic.find_by_name(topic_identifier.name)
+            if topic
+              topic_identifier.update_attribute(:topic_id, topic.id)
+              @cat.topics << topic
+            else
+              topic = Topic.create(:name => topic_name)
+              topic_identifier.update_attribute(:topic_id, topic.id)
+              @cat.topics << topic
             end
-          rescue
-            @errors << "rescue no topics for this category"
           end
         end
       end

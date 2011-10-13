@@ -5,16 +5,22 @@
   <%=@document.csv%>
 </p>
 <% @topic_identifiers.each do |ti| %>
+  <b><%= ti.name %> disambiguation:<%=ti.is_disambiguation%></b><br />
+  <% next if ti.topic_id.nil? %>
   <% topic = Topic.find(ti.topic_id) %>
-  <% question = Topic.to_question(topic) %>
-  <b><%= ti.name %></b><br />
+  <% next if topic.nil? %>
   <p>
-    <%= question  %>
+    <%  if topic.question %>
+      <%= topic.question %>
+    <% else %>
+    <em>No question made for this topic</em>
+    <% end %>
+
   </p>
   <ul>
-    <% wrong = Topic.false_answers(topic, question) %>
+    <% wrong = Answer.where("topic_id = ?", topic.id) %>
     <% wrong.each do |w| %>
-    <li><%= w %></li>
+    <li><%= w.name %></li>
     <%  end %>
   </ul>
 <%end%>

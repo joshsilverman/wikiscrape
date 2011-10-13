@@ -2,13 +2,17 @@ class Topic < ActiveRecord::Base
   
   has_and_belongs_to_many :cats, :uniq => true
   has_many :topic_identifiers
+  has_many :answers
 
   def self.wiki_page_name(name)
-    name_stack = create_name_stack(name)
+    puts "WIKI PAGE NAME"
+    name_stack = create_name_stack(name.gsub(" ","_"))
     article_name = nil
     while article_name.nil? and not name_stack.empty?
       temp_name = name_stack.pop
+      puts temp_name
       article_name = quick_lookup(temp_name)
+      puts article_name
     end
     return article_name
   end
@@ -46,11 +50,27 @@ class Topic < ActiveRecord::Base
       @errors << "rescue lookup can't lookup term"
       return nil
     end
-
+    puts article.description[0]
+    puts article.name
+    puts article.image[0] if article.image
     disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
     article.disambig = true unless disambig.nil?
     article.all_html = nil
     return article
+  end
+
+  def self.build_q_and_a(topic)
+    q = ""
+    q = Topic.to_question(topic) if topic.question.nil?
+    if q.length > 10
+      topic.update_attribute(:question, q)
+      answers = Topic.false_answers(topic, q)
+      if answers.size>1
+        answers.each do |a|
+          Answer.find_or_create_by_name_and_topic_id(a, topic.id)
+        end
+      end
+    end
   end
 
   def self.to_question(topic)
@@ -77,7 +97,8 @@ class Topic < ActiveRecord::Base
 
       text = (question_word + chunks[1..(chunks.length - 1)].join(" ")).gsub(/^\s+|\s+$/, '') + "?"
     rescue
-      @errors << "to_question failed to scrape topic description. Description: #{raw_text}"
+      puts "Error occured in to_question"
+      return
     end
 
     return text
@@ -139,7 +160,7 @@ class Topic < ActiveRecord::Base
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
-    choices = Set.new([topic.name])
+    choices = Set.new() #[topic.name]
     cat_buckets.each do |bucket|
       bucket[:cat].topics.each do |topic|
         puts topic.name
@@ -166,12 +187,27 @@ class Topic < ActiveRecord::Base
   private
 
   def self.quick_lookup(n)
+    redirect = Scraper.define do
+      process ".redirectText a", :redirect_url => "@href"
+      process "body", :all => :text
+      result :redirect_url, :all
+    end
+
     qwiki = Scraper.define do
       process "#firstHeading", :name => :text
       result  :name
     end
+    
     begin
-      article = qwiki.scrape(URI.parse("http://en.wikipedia.org/wiki/#{n}"))
+#      puts "pre redirect"
+#      redirect_link = redirect.scrape(URI.parse("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no"))
+#      puts "LINK"
+#      puts redirect_link.all
+#      if redirect_link.length > 1
+#        article = qwiki.scrape(URI.parse("http://en.wikipedia.org#{redirect_link}"))
+#      else
+        article = qwiki.scrape(URI.parse("http://en.wikipedia.org/wiki/#{n}"))
+#      end
       return article
     rescue
       return nil
