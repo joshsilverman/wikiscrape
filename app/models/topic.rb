@@ -187,11 +187,19 @@ class Topic < ActiveRecord::Base
   private
 
   def self.quick_lookup(n)
-    redirect = Scraper.define do
-      process ".redirectText a", :redirect_url => "@href"
-      process "body", :all => :text
-      result :redirect_url, :all
+    agent = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari'}
+    agent.follow_meta_refresh = true
+
+    begin
+      page = agent.get("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no")
+      page.search(".redirectText").each do |item|
+        @redirect = item.at("a")[:href]
+      end
+    rescue
+      @redirect = nil
     end
+
+    @redirect = "/wiki/#{n}" if @redirect.nil?
 
     qwiki = Scraper.define do
       process "#firstHeading", :name => :text
@@ -199,15 +207,8 @@ class Topic < ActiveRecord::Base
     end
     
     begin
-#      puts "pre redirect"
-#      redirect_link = redirect.scrape(URI.parse("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no"))
-#      puts "LINK"
-#      puts redirect_link.all
-#      if redirect_link.length > 1
-#        article = qwiki.scrape(URI.parse("http://en.wikipedia.org#{redirect_link}"))
-#      else
-        article = qwiki.scrape(URI.parse("http://en.wikipedia.org/wiki/#{n}"))
-#      end
+      puts "http://en.wikipedia.org#{@redirect}"
+      article = qwiki.scrape(URI.parse("http://en.wikipedia.org#{@redirect}"))
       return article
     rescue
       return nil
