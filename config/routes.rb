@@ -1,5 +1,6 @@
 Wikiscrape::Application.routes.draw do
   resources :lists
+  resources :documents
 
   resources :links
 
@@ -28,6 +29,8 @@ Wikiscrape::Application.routes.draw do
   resources :lists
   resources :terms
   resources :topics
+
+  root :to => "documents#index"
 
   # Sample resource route with options:
   #   resources :products do
