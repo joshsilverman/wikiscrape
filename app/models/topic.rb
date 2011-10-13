@@ -189,12 +189,15 @@ class Topic < ActiveRecord::Base
   def self.quick_lookup(n)
     agent = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari'}
     agent.follow_meta_refresh = true
-    page = agent.get("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no")
-    page.search(".redirectText").each do |item|
-      @redirect = item.at("a")[:href]
-    end
 
-    puts @redirect
+    begin
+      page = agent.get("http://en.wikipedia.org/w/index.php?title=#{n}&redirect=no")
+      page.search(".redirectText").each do |item|
+        @redirect = item.at("a")[:href]
+      end
+    rescue
+      @redirect = nil
+    end
 
     @redirect = "/wiki/#{n}" if @redirect.nil?
 
