@@ -80,6 +80,7 @@ class Document < ActiveRecord::Base
         end
       else
         @document.topic_identifiers << @topic_identifier
+        next if @topic_identifier.topic_id.nil?  
         @topic = Topic.find_by_id(@topic_identifier.topic_id)
         #check if linked topic has full desc
         if @topic.description.nil?
@@ -87,6 +88,7 @@ class Document < ActiveRecord::Base
 
           #if it's a disambig page create identifier and throw disambig flag
           if full_topic[:disambig]
+            @topic_identifier.update_attribute(:is_disambiguation, true)
             next
           else
             #otherwise update the topic with new info and create identifier for it

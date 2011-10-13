@@ -14,7 +14,7 @@ class DocumentsController < ApplicationController
   # GET /documents/1.xml
   def show
     @document = Document.find(params[:id])
-    @topic_identifiers = TopicIdentifier.joins(:documents).where("documents.id = ?", @document.id)
+    @topic_identifiers = @document.topic_identifiers
 
     respond_to do |format|
       format.html # show.html.erb
@@ -43,7 +43,7 @@ class DocumentsController < ApplicationController
   # POST /documents.xml
   def create
     @document = Document.create!(params[:document])
-    Document.parse_list(@document.id)
+    Document.parse_list(@document.id) unless @document.nil?
 
     respond_to do |format|
 #      if @document.save
