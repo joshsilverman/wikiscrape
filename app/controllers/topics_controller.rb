@@ -245,13 +245,40 @@ class TopicsController < ApplicationController
 
     choices = Set.new([topic.name])
     cat_buckets.each do |bucket|
-      bucket[:cat].topics.limit(3).all.each do |rel_topic|
-        choices.add rel_topic.name
-        break if choices.length == 10
+      scored_topics = []
+      puts "Checking category #{bucket[:cat].name}"  
+      bucket[:cat].topics.each do |top|
+        top.name = top.name.gsub /\([^)]*\)/, ""
+        next if topic.name.strip == top.name.strip
+        @votes = 0
+        @votes += 1 if matching_word_endings?(topic.name, top.name) 
+        @votes += 1 if matching_word_beginnings?(topic.name, top.name)
+        @votes += 1 if topic.name.split(" ").length == top.name.split(" ").length
+        scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
       end
+      scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
+
+      for i in (0..2) do
+        next if choices.length >= 10
+        choices.add scored_topics.pop[:topic]
+      end
+      # bucket[:cat].topics.limit(3).all.each do |rel_topic|
+      #   choices.add rel_topic.name
+      #   break if choices.length == 10
+      # end
     end
 
     return choices.to_a
+  end
+
+  def matching_word_endings?(base, compare)
+    return true if base.strip[-3, 3] == compare.strip[-3, 3]
+    return false
+  end
+
+  def matching_word_beginnings?(base, compare)
+    return true if base.strip[0..2] == compare.strip[1..2]
+    return false
   end
 
   def to_question(topic)

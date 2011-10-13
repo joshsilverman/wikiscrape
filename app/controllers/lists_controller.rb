@@ -1,8 +1,5 @@
 class ListsController < ApplicationController
 
-
-
-
   # GET /lists
   # GET /lists.xml
   def index
@@ -131,6 +128,7 @@ class ListsController < ApplicationController
   def slow_lookup name
     human_name = name.gsub("_", " ")
     @term = Term.find_by_term(human_name)
+
     @topic = Topic.find_by_id(@term.topic_id) if @term
     puts "Lookup Started"
     # fetch and save if no topic
@@ -245,32 +243,16 @@ class ListsController < ApplicationController
 #  end
 
   def false_answers(topic, blanked)
-
+    # CHECK FOR SIMILARITY IN WORDS BETWEEN THE OBJECT OF THE DEFINITION 
+    # AND THE WORDS IN THE POTENTIAL WRONG ANSWERS
     # Linguistics::use( :en )
-    # tgr = EngTagger.new
-    # text = "Alice chased the big fat cat."
-
-    # # Add part-of-speech tags to text
-    # tagged = tgr.add_tags(text)
-    # puts tagged
-    
-    # puts Linguistics::EN.has_wordnet?
+    # "he is a big dog".en.sentence.verb.to_s  
+    # puts Linguistics::EN.has_link_parser?
+    # puts blanked.en.sentence.object.to_s
 
     #build buckets
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
-
     desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
-
-    # Remove parenthesis
-
-    # Check POS
-
-    # Check number
-
-    # Check 
-
-    # Check Wordnet
-
 
     cat_buckets = []
     @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
@@ -293,35 +275,60 @@ class ListsController < ApplicationController
       end
     end
 
+    puts cat_buckets.to_json
+
     # Eliminate irrelevant buckets, sort by relevance
-    cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
+    # cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
     cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
     cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
-    choices = Set.new([topic.name])
+    choices = Set.new([])
     cat_buckets.each do |bucket|
-      bucket[:cat].topics.each do |topic|
-        puts topic.name
+      scored_topics = []
+      puts "Checking category #{bucket[:cat].name}"  
+      bucket[:cat].topics.each do |top|
+        # Remove parenthesis
+        top.name = top.name.gsub /\([^)]*\)/, ""
+        next if topic.name.strip == top.name.strip
+        @votes = 0
+        # Check if word ending and beginning the same
+        @votes += 1 if matching_word_endings?(topic.name, top.name) 
+        @votes += 1 if matching_word_beginnings?(topic.name, top.name)
+        # Check if same number of words
+        @votes += 1 if topic.name.split(" ").length == top.name.split(" ").length
+        scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
       end
-      bucket[:cat].topics.limit(3).all.each do |rel_topic|
-        puts rel_topic.name
-        choices.add rel_topic.name
-        break if choices.length == 10
+      scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
+
+      for i in (0..2) do
+        next if choices.length >= 10
+        choices.add scored_topics.pop[:topic]
       end
     end
 
-    puts "GENERATING FALSE ANSWERS:\n"
-    puts "Question: #{blanked}"
-    puts "Topic: #{topic.name}"
-    puts "Wrong answers: "
-    choices.to_a.each do |choice|
-      puts "  - #{choice}"
-    end
-    puts "\n\n"
+    # puts "GENERATING FALSE ANSWERS:\n"
+    # puts "Question: #{blanked}"
+    # puts "Topic: #{topic.name}"
+    # puts "Wrong answers: "
+    # puts choices.to_json
+    # choices.to_a.each do |choice|
+    #   puts "  - #{choice}"
+    # end
+    # puts "\n\n"
 
     return choices.to_a
+  end
+
+  def matching_word_endings?(base, compare)
+    return true if base.strip[-3, 3] == compare.strip[-3, 3]
+    return false
+  end
+
+  def matching_word_beginnings?(base, compare)
+    return true if base.strip[0..2] == compare.strip[1..2]
+    return false
   end
 
   def to_question(topic)
@@ -338,7 +345,7 @@ class ListsController < ApplicationController
       raw_text.gsub! /\[[^]*]\]/, ""
       raw_text.gsub! /\([^)]*\)/, ""
       first_sent = raw_text.split(/\.\s*"?[A-Z]|\.$/)[0]
-      chunks = first_sent.split(/ (is|are|was|were|refers to|comprises) /)
+      chunks = first_sent.split(/ (is|are|was|were|refers to|comprises|involves) /)
 
       if chunks[1] == "refers to"
         question_word = "What "

@@ -60,14 +60,14 @@ class Topic < ActiveRecord::Base
   end
 
   def self.build_q_and_a(topic)
-    q = ""
-    q = Topic.to_question(topic) if topic.question.nil?
-    if q.length > 10
-      topic.update_attribute(:question, q)
-      answers = Topic.false_answers(topic, q)
+    question = ""
+    question = Topic.to_question(topic) if topic.question.nil?
+    if question.length > 10
+      topic.update_attribute(:question, question)
+      answers = Topic.false_answers(topic, question)
       if answers.size>1
-        answers.each do |a|
-          Answer.find_or_create_by_name_and_topic_id(a, topic.id)
+        answers.each do |answer|
+          Answer.find_or_create_by_name_and_topic_id(answer, topic.id)
         end
       end
     end
