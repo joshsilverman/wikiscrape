@@ -15,6 +15,13 @@ class DocumentsController < ApplicationController
   def show
     @document = Document.find(params[:id])
     @topic_identifiers = @document.topic_identifiers
+    @answers = {}
+    @topic_identifiers.each do |topic|
+      @answers[topic.id] = ""
+      Answer.all(:conditions => {:topic_id => topic.id}).each do |answer|
+        @answers[topic.id] += "#{answer.name}\n"
+      end
+    end
 
     respond_to do |format|
       format.html # show.html.erb
