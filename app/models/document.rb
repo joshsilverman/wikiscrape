@@ -38,7 +38,7 @@ class Document < ActiveRecord::Base
                   :img_url => (full_topic[:image][0] if full_topic[:image]),
                   :description => (full_topic[:description][0] if full_topic[:description]))
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
-              #Cat.add_categories(full_topic[:catlinks])
+              Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
             end
           else
@@ -54,7 +54,7 @@ class Document < ActiveRecord::Base
                   :img_url => (full_topic[:image][0] if full_topic[:image]),
                   :description => (full_topic[:description][0] if full_topic[:description]))
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
-              #Cat.add_categories(full_topic[:catlinks])
+              Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
             end
           end
@@ -76,8 +76,8 @@ class Document < ActiveRecord::Base
             @topic.update_attributes(
                 :img_url => (full_topic[:image][0] if full_topic[:image]),
                 :description => (full_topic[:description][0] if full_topic[:description]))
-            #Cat.add_categories(full_topic[:catlinks])
-            Topic.build_q_and_a(@topic)
+            Cat.add_categories(full_topic[:catlinks])
+            @topic.build_q_and_a
           end
         end
       end
