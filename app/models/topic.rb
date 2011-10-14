@@ -156,8 +156,11 @@ class Topic < ActiveRecord::Base
         next if self.name.strip == top.name.strip
         @votes = 0
         # Check if word ending and beginning the same
-        @votes += 1 if matching_word_endings?(self.name, top.name)
-        @votes += 1 if matching_word_beginnings?(self.name, top.name)
+        puts "before word matching"
+        puts self.name
+        puts top.name
+        @votes += 1 if self.matching_word_endings(top.name)
+        @votes += 1 if self.matching_word_beginnings(top.name)
         # Check if same number of words
         @votes += 1 if self.name.split(" ").length == top.name.split(" ").length
         scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
@@ -191,13 +194,13 @@ class Topic < ActiveRecord::Base
     return choices.to_a
   end
 
-  def self.matching_word_endings?(base, compare)
-    return true if base.strip[-3, 3] == compare.strip[-3, 3]
+  def matching_word_endings(compare)
+    return true if self.name.strip[-3, 3] == compare.strip[-3, 3]
     return false
   end
 
-  def self.matching_word_beginnings?(base, compare)
-    return true if base.strip[0..2] == compare.strip[1..2]
+  def matching_word_beginnings(compare)
+    return true if self.name.strip[0..2] == compare.strip[1..2]
     return false
   end
 
