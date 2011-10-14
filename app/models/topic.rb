@@ -77,7 +77,8 @@ class Topic < ActiveRecord::Base
     end
   end
 
-  private
+  # private
+
   def to_question
 
     raw_text = self.description
@@ -113,6 +114,7 @@ class Topic < ActiveRecord::Base
 
   def false_answers
     @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
+    puts @topics.to_json
     desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
     cat_buckets = []

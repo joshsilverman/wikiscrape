@@ -68,14 +68,6 @@ ActiveRecord::Schema.define(:version => 20111013223255) do
     t.datetime "updated_at"
   end
 
-  create_table "topic_search_terms", :force => true do |t|
-    t.string   "name"
-    t.integer  "topic_id"
-    t.boolean  "is_disambiguation"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "topics", :force => true do |t|
     t.string   "name"
     t.text     "img_url"
