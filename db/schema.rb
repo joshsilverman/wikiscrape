@@ -60,27 +60,15 @@ ActiveRecord::Schema.define(:version => 20111013223255) do
     t.integer "topic_identifier_id"
   end
 
-  create_table "links", :force => true do |t|
-    t.integer  "topic_id"
-    t.integer  "ref_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "lists", :force => true do |t|
-    t.text     "csv"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "terms", :force => true do |t|
-    t.string   "term"
-    t.integer  "topic_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "topic_identifiers", :force => true do |t|
+    t.string   "name"
+    t.integer  "topic_id"
+    t.boolean  "is_disambiguation"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "topic_search_terms", :force => true do |t|
     t.string   "name"
     t.integer  "topic_id"
     t.boolean  "is_disambiguation"
