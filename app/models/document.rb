@@ -39,7 +39,7 @@ class Document < ActiveRecord::Base
                   :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
                   :blanked => full_topic[:description][0])
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
-              #Cat.add_categories(full_topic[:catlinks])
+              Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
             end
           else
@@ -56,7 +56,7 @@ class Document < ActiveRecord::Base
                   :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
                   :blanked => full_topic[:description][0])
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
-              #Cat.add_categories(full_topic[:catlinks])
+              Cat.add_categories(full_topic[:catlinks])
               @topic.build_q_and_a
             end
           end
@@ -79,7 +79,7 @@ class Document < ActiveRecord::Base
                 :img_url => (full_topic[:image][0] if full_topic[:image]),
                 :description => (clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
                 :blanked => full_topic[:description][0])
-            #Cat.add_categories(full_topic[:catlinks])
+            Cat.add_categories(full_topic[:catlinks])
             @topic.build_q_and_a
           end
         end

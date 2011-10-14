@@ -64,11 +64,11 @@ class Topic < ActiveRecord::Base
   end
 
   def build_q_and_a
-    puts "BUIling..."
     question = ""
     question = Topic.to_question(self) if self.question.nil?
     if question.length > 10
       self.update_attribute(:question, question)
+      puts self.description
       answers = Topic.false_answers(self, question)
       if answers.size>1
         answers.each do |answer|
@@ -113,6 +113,9 @@ class Topic < ActiveRecord::Base
   end
 
   def self.false_answers(topic, blanked)
+    puts "HERE IT IS:"
+    puts topic.description
+    puts blanked
     @topics = Topic.find_by_id(topic.id, :include => [{:cats => :topics}])
     desc_words = blanked.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
@@ -145,6 +148,7 @@ class Topic < ActiveRecord::Base
 
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
     choices = Set.new() #[topic.name]
+
     cat_buckets.each do |bucket|
       scored_topics = []
       puts "Checking category #{bucket[:cat].name}"  
@@ -154,8 +158,8 @@ class Topic < ActiveRecord::Base
         next if topic.name.strip == top.name.strip
         @votes = 0
         # Check if word ending and beginning the same
-        @votes += 1 if matching_word_endings?(topic.name, top.name) 
-        @votes += 1 if matching_word_beginnings?(topic.name, top.name)
+        @votes += 1 if self.matching_word_endings?(topic.name, top.name) 
+        @votes += 1 if self.matching_word_beginnings?(topic.name, top.name)
         # Check if same number of words
         @votes += 1 if topic.name.split(" ").length == top.name.split(" ").length
         scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
@@ -165,7 +169,8 @@ class Topic < ActiveRecord::Base
       for i in (0..2) do
         next if choices.length >= 10
         choices.add scored_topics.pop[:topic]
-      end      
+      end    
+      
       # bucket[:cat].topics.each do |topic|
       #   puts topic.name
       # end
