@@ -52,15 +52,13 @@ class Topic < ActiveRecord::Base
       puts "Error scraping!"
       return nil
     end
-    puts article.description[0]
-    puts article.name
-    puts article.image[0] if article.image
+    # puts article.description[0]
+    # puts article.name
+    # puts article.image[0] if article.image
     disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
     article.disambig = true unless disambig.nil?
-    article.all_html = nil
-    puts article.disambig
-    
-    return article
+    article.all_html = nil   
+    return {:article => article, :follow => article.follow}
   end
 
   def build_q_and_a
@@ -71,6 +69,7 @@ class Topic < ActiveRecord::Base
       answers = self.false_answers
       if answers.size>1
         answers.each do |answer|
+          puts self.id
           Answer.find_or_create_by_name_and_topic_id(answer, self.id)
         end
       end

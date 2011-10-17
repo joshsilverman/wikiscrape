@@ -14,17 +14,16 @@ class DocumentsController < ApplicationController
   # GET /documents/1.xml
   def show
     @document = Document.find(params[:id])
-    @topic_identifiers = @document.topic_identifiers
     @answers = {}
-    @topic_identifiers.each do |topic|
-      @answers[topic.id] = ""
-      Answer.all(:conditions => {:topic_id => topic.id}).each do |answer|
-        @answers[topic.id] += "#{answer.name}\n"
-      end
+    @topic_identifiers = @document.topic_identifiers
+    @topic_identifiers.each do |ti|
+      @topic = ti.topic
+      next unless @topic
+      @answers[@topic.id] = ""
+      @topic.answers.each do |answer|
+        @answers[@topic.id] += "#{answer.name}\n"
+      end      
     end
-
-    puts @answers.to_json
-
     respond_to do |format|
       format.html # show.html.erb
       format.xml  { render :xml => @document }
@@ -41,6 +40,7 @@ class DocumentsController < ApplicationController
       format.html # new.html.erb
       format.xml  { render :xml => @document }
     end
+
   end
 
   # GET /documents/1/edit
@@ -52,17 +52,39 @@ class DocumentsController < ApplicationController
   # POST /documents.xml
   def create
     @document = Document.create!(params[:document])
-    Document.parse_list(@document.id) unless @document.nil?
+    @ambiguous_terms = Document.parse_list(@document.id) unless @document.nil?
+    puts "ambiguous_terms:"
+    puts @ambiguous_terms.to_json
+    # Document.ambiguous_terms
 
-    respond_to do |format|
-#      if @document.save
-        format.html { redirect_to(@document, :notice => 'document was successfully created.') }
-        format.xml  { render :xml => @document, :status => :created, :location => @document }
-#      else
-#        format.html { render :action => "new" }
-#        format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
-#      end
+    if !@ambiguous_terms.empty? && @document.save
+      render :action => 'disambiguate'
+    elsif @document.save
+      redirect_to(@document, :notice => 'document was successfully created.')
     end
+
+    # respond_to do |format|
+    #   # disambiguate
+    #   format.html { redirect_to :action => "disambiguate" }# show.html.erb
+    #   # format.xml  { render :xml => @document }
+    # end  
+    # if @document.save
+    #   puts "yo"
+    #   disambiguate
+    #   # render :action => "disambiguate"
+    # end
+    # respond_to do |format|
+
+    #  if @document.save
+    #   redirect_to :action => "disambiguate"
+    #     # format.html { redirect_to :action => "disambiguate" }
+    #     # format.html { redirect_to(@document, :notice => 'document was successfully created.') }
+    #     # format.xml  { render :xml => @document, :status => :created, :location => @document }
+    #  else
+    #    format.html { render :action => "new" }
+    #    format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
+    #  end
+    # end
   end
 
   def update

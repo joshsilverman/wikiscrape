@@ -1,9 +1,14 @@
 class Document < ActiveRecord::Base
   has_and_belongs_to_many :topic_identifiers
 
+  def self.ambiguous_terms
+    puts "yeah son"
+  end
+
   def self.parse_list(id)
     @document = Document.find_by_id(id)
     @topic_identifiers = @document.csv.split /(?:\n|\r)+/
+    @ambiguous_terms = []
     @topic_identifiers.each do |ti|
       puts "START LOOP"
       puts ti
@@ -32,6 +37,7 @@ class Document < ActiveRecord::Base
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:disambig]
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :is_disambiguation => true)
+              @ambiguous_terms << {:name => ti, :id => ti, :links => full_topic[:follow]}
             else
               #otherwise update the topic with new info and create identifier for it
               @topic.update_attributes(
@@ -44,10 +50,11 @@ class Document < ActiveRecord::Base
             end
           else
             #create topic from wiki
-            full_topic = Topic.lookup_on_wiki(topic_name)
+            full_topic = Topic.lookup_on_wiki(topic_name)[:article]
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:disambig]
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :is_disambiguation => true)
+              @ambiguous_terms << {:name => ti, :id => ti, :links => full_topic[:follow]}
             else
               #otherwise update the topic with new info and create identifier for it
               @topic = Topic.create(
@@ -68,23 +75,28 @@ class Document < ActiveRecord::Base
         #check if linked topic has full desc
         if @topic.description.nil?
           full_topic = Topic.lookup_on_wiki(@topic.name)
-
+          ## HANDLE THIS EVENT
+          puts "Topic:"
+          next if full_topic.nil?
+          
           #if it's a disambig page create identifier and throw disambig flag
           if full_topic[:disambig]
             @topic_identifier.update_attribute(:is_disambiguation, true)
+            @ambiguous_terms << {:name => ti, :id => ti, :links => full_topic[:follow]}
             next
           else
             #otherwise update the topic with new info and create identifier for it
             @topic.update_attributes(
-                :img_url => (full_topic[:image][0] if full_topic[:image]),
-                :description => (Document.clean_markup_from_desc(full_topic[:description][0]) if full_topic[:description]),
-                :blanked => full_topic[:description][0])
-            Cat.add_categories(full_topic[:catlinks])
+                :img_url => (full_topic[:article][:image][0] if full_topic[:article][:image]),
+                :description => (Document.clean_markup_from_desc(full_topic[:article][:description][0]) if full_topic[:article][:description]),
+                :blanked => full_topic[:article][:description][0])
+            Cat.add_categories(full_topic[:article][:catlinks])
             @topic.build_q_and_a
           end
         end
       end
     end
+    return @ambiguous_terms
   end
 
   def self.clean_markup_from_desc(str)

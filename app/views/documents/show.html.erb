@@ -1,26 +1,34 @@
+<%= javascript_include_tag "show" %>
+<%= stylesheet_link_tag "show" %>
+
 <p id="notice"><%= notice %></p>
 
 <h2><%=@document.name%></h2>
 <br /><hr /><br />
 <% @topic_identifiers.each do |ti| %>
   <% next if ti.is_disambiguation %>
+  <% @topic = ti.topic %>
   <div>
-    <%= form_for ti.topic do |form| %>
+
+    <%= form_for @topic, :remote => true do |form| %>
       
-      <%= form.label "Term" %>
-      <%= form.text_field :name %><br /><br />
+      <%= form.label "Term", :class => "label" %>
+      <%= form.text_field :name, :class => "field" %><br /><br />
 
-      <%= form.label "Using wikipedia entry: #{ti.topic.name}" %><br /><br />
+      <%= form.label "Wikipedia entry: #{ti.topic.name}" %><br /><br />
 
-      <%= form.label "Definition" %>
-      <%= form.text_area :description, :rows=>8, :cols=>80 %><br /><br />
+      <%= form.label "Definition", :class => "label" %>
+      <%= form.text_area :description, :rows=>8, :cols=>60, :class => "field" %><br /><br />
 
-      <%= form.label "Question (MC)" %>
-      <%= form.text_area :question, :rows=>4 %><br /><br />
+      <%= form.label "Question", :class => "label" %>
+      <%= form.text_area :question, :rows=>4, :cols=>60, :class => "field" %><br /><br />
 
-      <%= text_area @answers, :text, :value => @answers[ti.id] %>
+      <%= form.label "Answers", :class => "label" %>
+      <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field" %><br /><br />
 
-      <%= button_to "Update Topic" %><br /><br />
+      <%= form_tag('/topics/' + @topic.id.to_s, :remote => true) do %>
+        <div><%= submit_tag 'Save' %></div>
+      <% end %>
 
       <br /><hr /><br />
                 

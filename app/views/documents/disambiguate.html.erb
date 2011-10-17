@@ -1,0 +1,17 @@
+<h3>Disambiguation</h3>
+<br /><br />
+<% @ambiguous_terms.each do |term| %>
+  
+  <%= form_for term, :remote => true do |form| %>
+    <h3><%= term[:name] %></h3>
+    <%= term[:links].each do |link| %>
+      <br><%= form.radio_button 'Link', link %> <%= link %> 
+    <% end %>
+    <%= form.submit %>  
+  <% end %>
+  <br /><br />
+<% end %>
+
+<br /><br />
+
+<%= button_to "Done", :action => 'show', :id => @document.id %>

@@ -9,6 +9,18 @@ class TopicsController < ApplicationController
     end
   end
 
+  def update
+    @topic = Topic.find_by_id(params[:id])
+    @topic.answers.delete_all
+    @topic.update_attributes(:name => params[:topic][:name], 
+      :description => params[:topic][:description],
+      :question => params[:topic][:question])
+    params[:answers][:text].split("\n").each do |answer|
+      @topic.answers.create(:topic_id => params[:id], :name => answer.strip)
+    end
+    render :nothing => true
+  end
+
   def test
     description_index = nil
     wiki_article = Scraper.define do
