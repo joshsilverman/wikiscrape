@@ -81,6 +81,7 @@ class DocumentsController < ApplicationController
   end
 
   def disambiguate_term
+    puts params.to_json
     @topic = Topic.lookup_wiki_explicit(params[:link], params[:term_id], params[:doc_id])
     # if @topic.save
     #   redirect_to(@document, :notice => 'document was successfully created.')

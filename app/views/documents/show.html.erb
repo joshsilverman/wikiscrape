@@ -2,32 +2,38 @@
 <%= stylesheet_link_tag "show" %>
 
 <p id="notice"><%= notice %></p>
-
 <center><h1><%=@document.name%></h1></center>
 <br /><hr /><br />
 <% @topic_identifiers.each do |ti| %>
   <% next if ti.is_disambiguation %>
   <% @topic = ti.topic %>
     <%= form_for @topic, :remote => true do |form| %>
-      <%= content_tag :div, :class => "container", :id => @topic.id.to_s do %>
+      <%= content_tag :div, :class => "container", :id => "div_" + @topic.id.to_s do %>
         <br />     
-        <%= form.label "Wikipedia topic", :class => "label" %>
-        <% puts ti.to_json %>
-        <%= form.text_field :name, :class => "field" %><br />
 
-        <%= form.label "Original search term: #{ti.name}", :class => "misc" %><br /><br />
+        <%= form.label "Wikipedia topic", :class => "label" %> 
+        <%= form.text_field :name, :class => "field", :id => "title_" + @topic.id.to_s %> 
+        <%= link_to_function "Reload", "reloadTerm(#{@topic.id.to_s}, #{ti.id}, #{@document.id});" %>
+        <br />
+
+        <%= form.label "Original search term: #{ti.name}", :class => "misc" %>
+        <%= link_to "(Original article)", "http://www.wikipedia.org/wiki/#{@topic.name}", :target => "_blank" %>
+        <br /><br />
 
         <%= form.label "Definition", :class => "label" %>
-        <%= form.text_area :description, :rows=>8, :cols=>60, :class => "field" %><br /><br />
+        <%= form.text_area :description, :rows=>8, :cols=>60, :class => "field" %>
+        <br /><br />
 
         <%= form.label "Question", :class => "label" %>
-        <%= form.text_area :question, :rows=>4, :cols=>60, :class => "field" %><br /><br />
+        <%= form.text_area :question, :rows=>4, :cols=>60, :class => "field" %>
+        <br /><br />
 
         <%= form.label "Answers", :class => "label" %>
-        <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field" %><br /><br />
+        <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field" %>
+        <br /><br />
 
         <%= form_tag('/topics/' + @topic.id.to_s, :remote => true, :id => @topic.id.to_s) do %>
-          <div><%= submit_tag 'Save' %></div>
+          <div><%= submit_tag 'Save', :class => "save", :id => @topic.id.to_s %></div>
         <% end %>
         <br />     
       <% end %>
