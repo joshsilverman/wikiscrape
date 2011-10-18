@@ -1,5 +1,17 @@
+.label {
+	display: block;
+	font-weight: bold;
+}
+
 .field {
-	/*float: left;*/
 	font-size: large;
-	margin-left : 85px;
+}
+
+.container {
+	padding-left: 40px;
+	background-color: #BFFFC0;
+}
+
+.misc {
+	font-style: italic;
 }

@@ -5,20 +5,16 @@ class Topic < ActiveRecord::Base
   has_many :answers
 
   def self.wiki_page_name(name)
-    puts "WIKI PAGE NAME"
     name_stack = create_name_stack(name.gsub(" ","_"))
     article_name = nil
     while article_name.nil? and not name_stack.empty?
       temp_name = name_stack.pop
       article_name = quick_lookup(temp_name)
-      puts "article"
-      puts article_name
     end
     return article_name
   end
 
   def self.lookup_on_wiki(name)
-    puts "lookup on wiki"
     name.gsub!(" ","_")
     description_index = nil
     wiki_article = Scraper.define do
@@ -57,8 +53,56 @@ class Topic < ActiveRecord::Base
     # puts article.image[0] if article.image
     disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
     article.disambig = true unless disambig.nil?
-    article.all_html = nil   
+    article.all_html = nil  
     return {:article => article, :follow => article.follow}
+  end
+
+  def self.lookup_wiki_explicit(url, term_id, doc_id)
+    description_index = nil
+    wiki_article = Scraper.define do
+      array :description
+      array :image
+      array :follow
+      array :catlinks
+
+      i = 0
+      process "#bodyContent p", :description=>:element do |element|
+        description_index = i if ((element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><b/) == 0 or (element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><i><b/) == 0) and not description_index
+        i += 1
+      end
+      process "#firstHeading", :name => :text
+      process ".infobox img, .thumb img", :image => "@src"
+      process "#bodyContent ul >li >a", :follow => "@href"
+      process "#mw-normal-catlinks >ul >li >a", :catlinks => :text
+      process "body", :all_html => :text
+      process "#disambig_placeholder", :disambig => :text
+#      process "a", :catlinks => :text
+      result  :name, :image, :follow, :catlinks, :all_html, :description, :disambig
+    end
+
+    begin
+      article = nil
+      puts "scraping http://en.wikipedia.org/wiki/#{url}"
+      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org#{url}"))
+      article.description = article.description[description_index..-1]
+      article.disambig = false
+    rescue
+      puts "Error scraping!"
+      return nil
+    end
+
+    disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
+    article.disambig = true unless disambig.nil?
+    article.all_html = nil   
+    @topic_identifier = TopicIdentifier.find_by_id(term_id)
+    @topic = Topic.create(
+        :name => (article[:name] if article[:name]),
+        :img_url => (article[:image][0] if article[:image]),
+        :description => (Document.clean_markup_from_desc(article[:description][0]) if article[:description]),
+        :blanked => article[:description][0]      
+    )
+    @topic_identifier.update_attributes({:topic_id => @topic.id, :is_disambiguation => false})
+    @topic.build_q_and_a
   end
 
   def build_q_and_a
@@ -69,7 +113,6 @@ class Topic < ActiveRecord::Base
       answers = self.false_answers
       if answers.size>1
         answers.each do |answer|
-          puts self.id
           Answer.find_or_create_by_name_and_topic_id(answer, self.id)
         end
       end
@@ -81,7 +124,6 @@ class Topic < ActiveRecord::Base
   def to_question
 
     raw_text = self.description
-
     # get_text = Scraper.define do
     #   process "p", :just_text => :text
     #   result :just_text
@@ -113,7 +155,6 @@ class Topic < ActiveRecord::Base
 
   def false_answers
     @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
-    puts @topics.to_json
     desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
     cat_buckets = []
@@ -138,7 +179,7 @@ class Topic < ActiveRecord::Base
     end
 
     # Eliminate irrelevant buckets, sort by relevance
-    cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
+    # cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
     cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
     cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
     cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
@@ -155,9 +196,6 @@ class Topic < ActiveRecord::Base
         next if self.name.strip == top.name.strip
         @votes = 0
         # Check if word ending and beginning the same
-        puts "before word matching"
-        puts self.name
-        puts top.name
         @votes += 1 if self.matching_word_endings(top.name)
         @votes += 1 if self.matching_word_beginnings(top.name)
         # Check if same number of words
@@ -181,15 +219,15 @@ class Topic < ActiveRecord::Base
       # end
     end
 
-    puts "GENERATING FALSE ANSWERS:\n"
-    puts "Question: #{self.question}"
-    puts "Topic: #{self.name}"
-    puts "Wrong answers: "
-    choices.to_a.each do |choice|
-      puts "  - #{choice}"
-    end
-    puts "\n\n"
-
+    # puts "GENERATING FALSE ANSWERS:\n"
+    # puts "Question: #{self.question}"
+    # puts "Topic: #{self.name}"
+    # puts "Wrong answers: "
+    # choices.to_a.each do |choice|
+    #   puts "  - #{choice}"
+    # end
+    # puts "\n\n"
+    # puts choices.to_a
     return choices.to_a
   end
 
@@ -226,7 +264,6 @@ class Topic < ActiveRecord::Base
     end
     
     begin
-      puts "http://en.wikipedia.org#{@redirect}"
       article = qwiki.scrape(URI.parse("http://en.wikipedia.org#{@redirect}"))
       return article
     rescue

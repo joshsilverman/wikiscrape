@@ -17,9 +17,14 @@ class DocumentsController < ApplicationController
     @answers = {}
     @topic_identifiers = @document.topic_identifiers
     @topic_identifiers.each do |ti|
-      @topic = ti.topic
-      next unless @topic
+      if ti.topic.nil?
+        @topic = Topic.create(:name => ti.name, :description => "", :blanked => "")
+        ti.update_attribute(:topic_id, @topic.id)
+      else
+        @topic = ti.topic
+      end      
       @answers[@topic.id] = ""
+
       @topic.answers.each do |answer|
         @answers[@topic.id] += "#{answer.name}\n"
       end      
@@ -53,38 +58,12 @@ class DocumentsController < ApplicationController
   def create
     @document = Document.create!(params[:document])
     @ambiguous_terms = Document.parse_list(@document.id) unless @document.nil?
-    puts "ambiguous_terms:"
-    puts @ambiguous_terms.to_json
-    # Document.ambiguous_terms
-
+    @topic_identifiers = @document.topic_identifiers
     if !@ambiguous_terms.empty? && @document.save
       render :action => 'disambiguate'
     elsif @document.save
       redirect_to(@document, :notice => 'document was successfully created.')
     end
-
-    # respond_to do |format|
-    #   # disambiguate
-    #   format.html { redirect_to :action => "disambiguate" }# show.html.erb
-    #   # format.xml  { render :xml => @document }
-    # end  
-    # if @document.save
-    #   puts "yo"
-    #   disambiguate
-    #   # render :action => "disambiguate"
-    # end
-    # respond_to do |format|
-
-    #  if @document.save
-    #   redirect_to :action => "disambiguate"
-    #     # format.html { redirect_to :action => "disambiguate" }
-    #     # format.html { redirect_to(@document, :notice => 'document was successfully created.') }
-    #     # format.xml  { render :xml => @document, :status => :created, :location => @document }
-    #  else
-    #    format.html { render :action => "new" }
-    #    format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
-    #  end
-    # end
   end
 
   def update
@@ -99,6 +78,14 @@ class DocumentsController < ApplicationController
         format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
       end
     end
+  end
+
+  def disambiguate_term
+    @topic = Topic.lookup_wiki_explicit(params[:link], params[:term_id], params[:doc_id])
+    # if @topic.save
+    #   redirect_to(@document, :notice => 'document was successfully created.')
+    # end
+    render :nothing => true
   end
 
   # DELETE /documents/1
