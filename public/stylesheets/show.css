@@ -1,0 +1,17 @@
+.label {
+	display: block;
+	font-weight: bold;
+}
+
+.field {
+	font-size: large;
+}
+
+.container {
+	padding-left: 40px;
+	background-color: #D6D6D6;
+}
+
+.misc {
+	font-style: italic;
+}

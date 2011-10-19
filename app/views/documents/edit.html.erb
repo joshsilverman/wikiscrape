@@ -1,0 +1,27 @@
+<h1>Editing list</h1>
+
+<%= render 'form' %>
+
+<%= link_to 'Show', @document %> |
+<%= link_to 'Back', documents_path %>
+
+
+
+<% topic = Topic.find(ti.topic_id) %>
+  <b><%= ti.name %> d:<%=ti.is_disambiguation%></b><br />
+  <% next if topic.nil? %>
+  <p>
+    <%= topic.inspect %>
+    <%  if topic.question %>
+      <%= topic.question %>
+    <% else %>
+    <em>No question made for this topic</em>
+    <% end %>
+
+  </p>
+  <ul>
+    <% wrong = Answer.where("topic_id = ?", topic.id) %>
+    <% wrong.each do |w| %>
+    <li><%= w.name %></li>
+    <%  end %>
+  </ul>

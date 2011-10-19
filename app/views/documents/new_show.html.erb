@@ -1,0 +1,59 @@
+<p id="notice"><%= notice %></p>
+
+<h2><%=@document.name%></h2>
+
+<% @topic_identifiers.each do |ti| %>
+  <div>
+    <%= form_for topic do |form| %>
+      
+      <%= form.label :name %>
+      <%= form.text_field :name %><br />
+
+      <%= form.label ti.topic %>
+      <%= form.text_field ti.topic %><br />
+
+      <%= form.label :description %>
+      <%= form.text_field :description %><br />
+
+      <%= form.label :question %>
+      <%= form.text_field :question %><br />     
+
+      <%= form.label :question %>
+      <%= form.text_field :question %><br />   
+
+      <% puts "yo"  %>
+      <!-- <%= form.label ti.question %> -->
+      <!-- <%= form.text_field ti.question %><br /> -->
+
+            
+    <%end%>
+  </div>
+<%end%>
+
+
+
+
+
+<p>
+  <%=@document.csv%>
+</p>
+<% @topic_identifiers.each do |ti| %>
+  <b><%= ti.name %> disambiguation:<%=ti.is_disambiguation%></b><br />
+  <% next if ti.topic_id.nil? %>
+  <% topic = Topic.find(ti.topic_id) %>
+  <% next if topic.nil? %>
+  <p>
+    <%  if topic.question %>
+      <%= topic.question %>
+    <% else %>
+    <em>No question made for this topic</em>
+    <% end %>
+
+  </p>
+  <ul>
+    <% wrong = Answer.where("topic_id = ?", topic.id) %>
+    <% wrong.each do |w| %>
+    <li><%= w.name %></li>
+    <%  end %>
+  </ul>
+<%end%>

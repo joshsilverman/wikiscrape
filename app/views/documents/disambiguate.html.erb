@@ -1,0 +1,22 @@
+<%= stylesheet_link_tag "disambiguate" %>
+
+<% @ambiguous_terms.each do |term| %>
+	<% form_tag({:controller => "documents", :action => "disambiguate_term"}, :remote => true) do %>
+		<%= content_tag :div, :class => "container" do %>
+			<br />
+			<h2>Disambiguate: <%= term[:name] %></h2><br />
+			<% term[:links].each do |link| %>
+				<%= hidden_field_tag "doc_id", @document.id %>
+				<%= hidden_field_tag "term_id", term[:topic_id] %>
+				<%= radio_button_tag "link", link %> <%= link %>
+				<br />
+			<% end %>
+			<br />
+			<%= submit_tag "Update term" %>
+			<br />
+		<% end %>
+	<% end %>
+	<br /><br />
+<% end %>
+<%= button_to "Done", :action => "show", :id => @document.id %>
+
