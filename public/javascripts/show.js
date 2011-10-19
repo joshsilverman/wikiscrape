@@ -39,7 +39,6 @@ var reloadTerm = function(dom_id, term_id, doc_id) {
 		   			response.answers.each(function(answer) {
 		   				answerText = answerText + answer.answer.name + "\n";
 		   			});
-		   			alert(answerText);
 		   			$('answers_' + dom_id).value = answerText;
 
 		        	// UPDATE LINKS, ETC
