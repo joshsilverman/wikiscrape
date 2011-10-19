@@ -34,17 +34,10 @@ GEM
     delayed_job (2.1.4)
       activesupport (~> 3.0)
       daemons
-    engtagger (0.1.1)
-      hoe (>= 1.5.1)
-      hpricot
     erubis (2.6.6)
       abstract (>= 1.0.0)
     fastercsv (1.5.4)
-    hoe (2.12.3)
-      rake (~> 0.8)
-    hpricot (0.6.164)
     i18n (0.6.0)
-    linguistics (1.0.9)
     mail (2.2.19)
       activesupport (>= 2.3.6)
       i18n (>= 0.4.0)
@@ -100,9 +93,7 @@ PLATFORMS
 
 DEPENDENCIES
   delayed_job
-  engtagger (= 0.1.1)
   fastercsv
-  linguistics (= 1.0.9)
   mechanize
   mocha
   mysql2 (< 0.3)
