@@ -86,6 +86,7 @@ class DocumentsController < ApplicationController
     # if @topic.save
     #   redirect_to(@document, :notice => 'document was successfully created.')
     # end
+    # return @topic
     render :nothing => true
   end
 
@@ -101,6 +102,7 @@ class DocumentsController < ApplicationController
     end
   end
 
+  
 
   ## THIS IS NOT A REAL METHOD!!! JUST A CSV EXPORT EXAMPLE ##
   def export_document_to_csv

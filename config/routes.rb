@@ -12,6 +12,7 @@ Wikiscrape::Application.routes.draw do
   match "/topics/index"
   match "/cats/index" => "cats#index"
   match "topics/test/:name" => "topics#test"
+  match "topics/get_topic" => "topics#get_topic"
   match "/cat_lookup/:name" => "lists#category_lookup"
   match "/to_csv/:id/:file_name" => "documents#export_document_to_csv"
   match "/documents/disambiguate_term" => "documents#disambiguate_term"

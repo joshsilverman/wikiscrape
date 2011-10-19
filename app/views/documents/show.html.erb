@@ -17,7 +17,8 @@
         <br />
 
         <%= form.label "Original search term: #{ti.name}", :class => "misc" %>
-        <%= link_to "(Original article)", "http://www.wikipedia.org/wiki/#{@topic.name}", :target => "_blank" %>
+        <%= link_to "(Original article)", "http://www.wikipedia.org/wiki/#{@topic.name}", :target => "_blank" %> or... 
+        <%= link_to "Wiki Search", "http://en.wikipedia.org/w/index.php?title=Special%3ASearch&search=#{@topic.name}&fulltext=Search&ns0=1&redirs=1&profile=advanced", :target => "_blank" %>
         <br /><br />
 
         <%= form.label "Definition", :class => "label" %>

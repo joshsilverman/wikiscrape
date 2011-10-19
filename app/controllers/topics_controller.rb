@@ -21,6 +21,19 @@ class TopicsController < ApplicationController
     render :nothing => true
   end
 
+  def get_topic
+    ## INCLUDES QUESTION + ANSWERS!!
+    @ti = TopicIdentifier.find_by_id(params[:term_id])
+    @topic = @ti.topic
+    @answers = Answer.all(:conditions => {:topic_id => @ti.id})
+    @hash = {}
+    @hash["topic"] = [] 
+    @hash["topic"] << @topic
+
+    # @hash = {"topic" => @topic, "answers" => @answers}
+    render :json => @hash
+  end
+
   def test
     description_index = nil
     wiki_article = Scraper.define do
