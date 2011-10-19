@@ -136,21 +136,25 @@ class DocumentsController < ApplicationController
   private
 
   def clean_markup_from_desc(str)
-    get_text = Scraper.define do
-      process "p", :just_text => :text
-      result :just_text
-    end
 
-    begin
-      raw_text = get_text.scrape(str)
-      raw_text.gsub! /\<[^>]*>\]/, ""
-      raw_text.gsub! /\[[^]*]\]/, ""
-      raw_text.gsub! /\([^)]*\)/, ""
-      raw_text.gsub!(" ,", ",")
-    rescue
-      raw_text =  "ERROR!!"
-    end
+    str.gsub!("\s{2,}", " ")
+    str.gsub!(" .", ".")
 
-    return raw_text
+    # get_text = Scraper.define do
+    #   process "p", :just_text => :text
+    #   result :just_text
+    # end
+
+    # begin
+    #   raw_text = get_text.scrape(str)
+    #   raw_text.gsub! /\<[^>]*>\]/, ""
+    #   raw_text.gsub! /\[[^]*]\]/, ""
+    #   raw_text.gsub! /\([^)]*\)/, ""
+    #   raw_text.gsub!(" ,", ",")
+    # rescue
+    #   raw_text =  "ERROR!!"
+    # end
+
+    return str
   end
 end
