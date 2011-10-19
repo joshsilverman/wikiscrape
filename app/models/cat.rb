@@ -21,6 +21,7 @@ class Cat < ActiveRecord::Base
   end
 
   def self.add_categories(cat_names)
+    return if cat_names.nil?
     cat_names.each do |cat_name|
       @cat = Cat.find_by_name(cat_name)
       Cat.transaction do
