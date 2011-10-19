@@ -26,12 +26,7 @@ class TopicsController < ApplicationController
     @ti = TopicIdentifier.find_by_id(params[:term_id])
     @topic = @ti.topic
     @answers = Answer.all(:conditions => {:topic_id => @ti.id})
-    @hash = {}
-    @hash["topic"] = [] 
-    @hash["topic"] << @topic
-
-    # @hash = {"topic" => @topic, "answers" => @answers}
-    render :json => @hash
+    render :json => {"topic" => @topic, "answers" => @answers}
   end
 
   def test

@@ -31,10 +31,18 @@ var reloadTerm = function(dom_id, term_id, doc_id) {
 		            alert("Update failed!");
 		        },
 		        onSuccess: function(response) {
-		        	// alert(JSON.stringify(response));
-		        	// alert(typeof(response.request.transport.responseText));
-        			alert(JSON.parse(response.request.transport.responseText).topic);
-        			// alert(JSON.stringify(response.request.transport.responseText.answers));
+		        	var response = JSON.parse(response.request.transport.responseText)
+		        	$('title_' + dom_id).value = response.topic.topic.name
+		        	$('description_' + dom_id).value = response.topic.topic.description;
+		   			$('question_' + dom_id).value = response.topic.topic.question;
+		   		   	var answerText = "";
+		   			response.answers.each(function(answer) {
+		   				answerText = answerText + answer.answer.name + "\n";
+		   			});
+		   			alert(answerText);
+		   			$('answers_' + dom_id).value = answerText;
+
+		        	// UPDATE LINKS, ETC
         		}.bind(this)
         	});
         }.bind(this)

@@ -101,6 +101,9 @@ class Topic < ActiveRecord::Base
         :description => (Document.clean_markup_from_desc(article[:description][0]) if article[:description]),
         :blanked => article[:description][0]      
     )
+    # puts Answer.all(:conditions => {:topic_id => term_id}).to_json
+    Answer.delete_all(:topic_id => term_id)
+    # puts Answer.all(:conditions => {:topic_id => term_id}).to_json
     @topic_identifier.update_attributes({:topic_id => @topic.id, :is_disambiguation => false})
     @topic.build_q_and_a
   end
@@ -187,6 +190,7 @@ class Topic < ActiveRecord::Base
     # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
 
     choices = Set.new() #[self.name]
+
     cat_buckets.each do |bucket|
       scored_topics = []
       puts "Checking category #{bucket[:cat].name}"  
@@ -227,7 +231,7 @@ class Topic < ActiveRecord::Base
     #   puts "  - #{choice}"
     # end
     # puts "\n\n"
-    # puts choices.to_a
+    puts choices.to_a
     return choices.to_a
   end
 
