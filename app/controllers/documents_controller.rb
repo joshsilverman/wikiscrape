@@ -124,7 +124,7 @@ class DocumentsController < ApplicationController
      @document.topic_identifiers.each do |ti|
         topic = Topic.find_by_id(ti.topic_id)
         answers = Answer.where("topic_id = ?",ti.topic_id)
-        next if topic.nil? || topic.description.length < 1
+        next if topic.nil? || topic.description.nil? || topic.description.length < 1
 
         row = [ti.name, clean_markup_from_desc(topic.description), topic.question]
         unless answers.nil?

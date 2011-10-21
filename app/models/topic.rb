@@ -166,7 +166,9 @@ class Topic < ActiveRecord::Base
 
     # For each word in the question, check if it is in the category title text, if so, augment its relevance score
     desc_words.each do |desc_word|
+      puts desc_word
       cat_buckets.each do |bucket|
+        puts bucket[:cat].name
         bucket[:rel] += 1 if bucket[:cat].name =~ /#{desc_word}/i and desc_word.length > 3
       end
     end
@@ -210,7 +212,7 @@ class Topic < ActiveRecord::Base
 
       for i in (0..2) do
         next if choices.length >= 10
-        choices.add scored_topics.pop[:topic]
+        choices.add scored_topics.pop[:topic] unless scored_topics.empty?
       end    
       
       # bucket[:cat].topics.each do |topic|

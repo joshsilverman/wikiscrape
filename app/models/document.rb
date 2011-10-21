@@ -49,7 +49,7 @@ class Document < ActiveRecord::Base
               @topic.update_attributes(
                   :img_url => (full_topic[:article][:image][0] if full_topic[:article][:image]),
                   :description => (Document.clean_markup_from_desc(full_topic[:article][:description][0]) if full_topic[:article][:description]),
-                  :blanked => Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
+                  :blanked => full_topic[:article][:description][0]) #Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
               Cat.add_categories(full_topic[:article][:catlinks])
               @topic.build_q_and_a
@@ -58,6 +58,7 @@ class Document < ActiveRecord::Base
             # puts "8"
             #create topic from wiki
             full_topic = Topic.lookup_on_wiki(topic_name)
+            puts full_topic[:article][:name]
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:article][:disambig]
               # puts "9"
@@ -71,7 +72,7 @@ class Document < ActiveRecord::Base
                   :name => (full_topic[:article][:name] if full_topic[:article][:name]),
                   :img_url => (full_topic[:article][:image][0] if full_topic[:article][:image]),
                   :description => (Document.clean_markup_from_desc(full_topic[:article][:description][0]) if full_topic[:article][:description]),
-                  :blanked => Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
+                  :blanked => full_topic[:article][:description][0]) #Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
               @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
               Cat.add_categories(full_topic[:article][:catlinks])
               @topic.build_q_and_a
@@ -98,7 +99,7 @@ class Document < ActiveRecord::Base
             @topic.update_attributes(
                 :img_url => (full_topic[:article][:image][0] if full_topic[:article][:image]),
                 :description => (Document.clean_markup_from_desc(full_topic[:article][:description][0]) if full_topic[:article][:description]),
-                :blanked => Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
+                :blanked => full_topic[:article][:description][0]) #Iconv.conv("UTF-8//IGNORE", "US-ASCII", full_topic[:article][:description][0]))
             Cat.add_categories(full_topic[:article][:catlinks])
             @topic.build_q_and_a
           end
