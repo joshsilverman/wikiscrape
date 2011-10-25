@@ -157,82 +157,86 @@ class Topic < ActiveRecord::Base
   end
 
   def false_answers
-    @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
-    desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
-
-    cat_buckets = []
-    @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
-    self.name.split(' ').each {|n| desc_words.push(n)}
-
-    # For each word in the question, check if it is in the category title text, if so, augment its relevance score
-    desc_words.each do |desc_word|
-      cat_buckets.each do |bucket|
-        bucket[:rel] += 1 if bucket[:cat].name =~ /#{desc_word}/i and desc_word.length > 3
-      end
-    end
-
-    # Check to make sure its not an identical match, then normalize bucket relevance by dividing by the number of words
-    cat_buckets.each do |bucket|
-      words = bucket[:cat].name.split(' ')
-      if bucket[:cat].name =~ /#{self.name}/i
-        bucket[:rel] = 0.0
-      else
-        bucket[:rel] = bucket[:rel] / words.size.to_f
-      end
-    end
-
-    # Eliminate irrelevant buckets, sort by relevance
-    # cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
-    cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
-    cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
-    cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
-
-    # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
-
     choices = Set.new() #[self.name]
+    begin
+      @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
+      desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
-    cat_buckets.each do |bucket|
-      scored_topics = []
-      puts "Checking category #{bucket[:cat].name}"  
-      bucket[:cat].topics.each do |top|
-        # Remove parenthesis
-        top.name = top.name.gsub /\([^)]*\)/, ""
-        next if self.name.strip == top.name.strip
-        @votes = 0
-        # Check if word ending and beginning the same
-        @votes += 1 if self.matching_word_endings(top.name)
-        @votes += 1 if self.matching_word_beginnings(top.name)
-        # Check if same number of words
-        @votes += 1 if self.name.split(" ").length == top.name.split(" ").length
-        scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
+      cat_buckets = []
+      @topics.cats.each {|cat| cat_buckets.push({:cat => cat, :rel => 0})}
+      self.name.split(' ').each {|n| desc_words.push(n)}
+
+      # For each word in the question, check if it is in the category title text, if so, augment its relevance score
+      desc_words.each do |desc_word|
+        cat_buckets.each do |bucket|
+          bucket[:rel] += 1 if bucket[:cat].name =~ /#{desc_word}/i and desc_word.length > 3
+        end
       end
-      scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
 
-      for i in (0..2) do
-        next if choices.length >= 10
-        choices.add scored_topics.pop[:topic]
-      end    
-      
-      # bucket[:cat].topics.each do |topic|
-      #   puts topic.name
+      # Check to make sure its not an identical match, then normalize bucket relevance by dividing by the number of words
+      cat_buckets.each do |bucket|
+        words = bucket[:cat].name.split(' ')
+        if bucket[:cat].name =~ /#{self.name}/i
+          bucket[:rel] = 0.0
+        else
+          bucket[:rel] = bucket[:rel] / words.size.to_f
+        end
+      end
+
+      # Eliminate irrelevant buckets, sort by relevance
+      # cat_buckets = cat_buckets.find_all{|bucket| bucket[:rel] >= 0.2}
+      cat_buckets = cat_buckets.find_all{|bucket| not bucket[:cat].name =~ /^Articles with/}
+      cat_buckets = cat_buckets.sort_by{|bucket| 1/bucket[:rel]}
+      cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
+
+      # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
+
+      cat_buckets.each do |bucket|
+        scored_topics = []
+        puts "Checking category #{bucket[:cat].name}"  
+        bucket[:cat].topics.each do |top|
+          # Remove parenthesis
+          top.name = top.name.gsub /\([^)]*\)/, ""
+          next if self.name.strip == top.name.strip
+          @votes = 0
+          # Check if word ending and beginning the same
+          @votes += 1 if self.matching_word_endings(top.name)
+          @votes += 1 if self.matching_word_beginnings(top.name)
+          # Check if same number of words
+          @votes += 1 if self.name.split(" ").length == top.name.split(" ").length
+          scored_topics.push({:topic => top.name.gsub(/\([^)]*\)/, ""), :votes => @votes})     
+        end
+        scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
+
+        for i in (0..2) do
+          next if choices.length >= 10
+          choices.add scored_topics.pop[:topic]
+        end    
+        
+        # bucket[:cat].topics.each do |topic|
+        #   puts topic.name
+        # end
+        # bucket[:cat].topics.limit(3).all.each do |rel_topic|
+        #   puts rel_topic.name
+        #   choices.add rel_topic.name
+        #   break if choices.length == 10
+        # end
+      end
+
+      # puts "GENERATING FALSE ANSWERS:\n"
+      # puts "Question: #{self.question}"
+      # puts "Topic: #{self.name}"
+      # puts "Wrong answers: "
+      # choices.to_a.each do |choice|
+      #   puts "  - #{choice}"
       # end
-      # bucket[:cat].topics.limit(3).all.each do |rel_topic|
-      #   puts rel_topic.name
-      #   choices.add rel_topic.name
-      #   break if choices.length == 10
-      # end
+      # puts "\n\n"
+      puts choices.to_a
+      return choices.to_a
+    rescue
+      puts "Error generating false answers!"
+      return choices.to_a
     end
-
-    # puts "GENERATING FALSE ANSWERS:\n"
-    # puts "Question: #{self.question}"
-    # puts "Topic: #{self.name}"
-    # puts "Wrong answers: "
-    # choices.to_a.each do |choice|
-    #   puts "  - #{choice}"
-    # end
-    # puts "\n\n"
-    puts choices.to_a
-    return choices.to_a
   end
 
   def matching_word_endings(compare)
