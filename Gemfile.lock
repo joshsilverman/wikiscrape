@@ -38,6 +38,7 @@ GEM
       abstract (>= 1.0.0)
     fastercsv (1.5.4)
     i18n (0.6.0)
+    iconv (0.1)
     mail (2.2.19)
       activesupport (>= 2.3.6)
       i18n (>= 0.4.0)
@@ -94,6 +95,7 @@ PLATFORMS
 DEPENDENCIES
   delayed_job
   fastercsv
+  iconv
   mechanize
   mocha
   mysql2 (< 0.3)

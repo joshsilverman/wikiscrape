@@ -223,15 +223,13 @@ class Topic < ActiveRecord::Base
         # end
       end
 
-      # puts "GENERATING FALSE ANSWERS:\n"
-      # puts "Question: #{self.question}"
-      # puts "Topic: #{self.name}"
-      # puts "Wrong answers: "
-      # choices.to_a.each do |choice|
-      #   puts "  - #{choice}"
-      # end
-      # puts "\n\n"
-      puts choices.to_a
+      scored_topics.sort! {|a,b| a[:votes] <=> b[:votes] }
+
+      for i in (0..2) do
+        next if choices.length >= 10
+        choices.add scored_topics.pop[:topic] unless scored_topics.empty?
+      end    
+      
       return choices.to_a
     rescue
       puts "Error generating false answers!"
