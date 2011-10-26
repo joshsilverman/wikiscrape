@@ -22,7 +22,6 @@ class TopicsController < ApplicationController
   end
 
   def get_topic
-    ## INCLUDES QUESTION + ANSWERS!!
     @ti = TopicIdentifier.find_by_id(params[:term_id])
     @topic = @ti.topic
     @answers = Answer.all(:conditions => {:topic_id => @ti.id})

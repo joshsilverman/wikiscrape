@@ -15,7 +15,27 @@ class Topic < ActiveRecord::Base
   end
 
   def self.lookup_on_wiki(name)
+    article = scrape_body(name) 
+    return {:article => article, :follow => article.follow}
+  end
+
+  def self.wiki_disambiguate(name, term_id)    
+    article = scrape_body(name)
+    topic_identifier = TopicIdentifier.find_by_id(term_id)
+    topic = Topic.create(
+        :name => (article[:name] if article[:name]),
+        :img_url => (article[:image][0] if article[:image]),
+        :description => (Document.clean_markup_from_desc(article[:description][0]) if article[:description]),
+        :blanked => article[:description][0]      
+    )
+    Answer.delete_all(:topic_id => term_id)
+    topic_identifier.update_attributes({:topic_id => topic.id, :is_disambiguation => false})
+    topic.build_q_and_a
+  end
+
+  def self.scrape_body(name)
     name.gsub!(" ","_")
+    name.gsub!("/wiki/", "")
     description_index = nil
     wiki_article = Scraper.define do
       array :description
@@ -44,66 +64,14 @@ class Topic < ActiveRecord::Base
       article = wiki_article.scrape(URI.parse("http://en.wikipedia.org/wiki/#{name}"))
       article.description = article.description[description_index..-1]
       article.disambig = false
+      disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
+      article.disambig = true unless disambig.nil?
+      article.all_html = nil 
+      return article
     rescue
       puts "Error scraping!"
       return nil
     end
-    disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
-    article.disambig = true unless disambig.nil?
-    article.all_html = nil  
-    return {:article => article, :follow => article.follow}
-  end
-
-  def self.lookup_wiki_explicit(name, term_id, doc_id)
-    name.gsub!(" ","_")
-    description_index = nil
-    wiki_article = Scraper.define do
-      array :description
-      array :image
-      array :follow
-      array :catlinks
-
-      i = 0
-      process "#bodyContent p", :description=>:element do |element|
-        description_index = i if ((element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><b/) == 0 or (element.to_s =~ /^<p[^>]*>[a-zA-Z]|^<p[^>]*><i><b/) == 0) and not description_index
-        i += 1
-      end
-      process "#firstHeading", :name => :text
-      process ".infobox img, .thumb img", :image => "@src"
-      process "#bodyContent ul >li >a", :follow => "@href"
-      process "#mw-normal-catlinks >ul >li >a", :catlinks => :text
-      process "body", :all_html => :text
-      process "#disambig_placeholder", :disambig => :text
-#      process "a", :catlinks => :text
-      result  :name, :image, :follow, :catlinks, :all_html, :description, :disambig
-    end
-
-    begin
-      article = nil
-      puts "scraping http://en.wikipedia.org/wiki/#{name}"
-      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org#{name}"))
-      article.description = article.description[description_index..-1]
-      article.disambig = false
-    rescue
-      puts "Error scraping!"
-      return nil
-    end
-
-    disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
-    article.disambig = true unless disambig.nil?
-    article.all_html = nil   
-    @topic_identifier = TopicIdentifier.find_by_id(term_id)
-    @topic = Topic.create(
-        :name => (article[:name] if article[:name]),
-        :img_url => (article[:image][0] if article[:image]),
-        :description => (Document.clean_markup_from_desc(article[:description][0]) if article[:description]),
-        :blanked => article[:description][0]      
-    )
-    # puts Answer.all(:conditions => {:topic_id => term_id}).to_json
-    Answer.delete_all(:topic_id => term_id)
-    # puts Answer.all(:conditions => {:topic_id => term_id}).to_json
-    @topic_identifier.update_attributes({:topic_id => @topic.id, :is_disambiguation => false})
-    @topic.build_q_and_a
   end
 
   def build_q_and_a
@@ -265,6 +233,7 @@ class Topic < ActiveRecord::Base
   end
 
   def self.create_name_stack(n)
+    puts n
     name_stack = []
 
     name_stack.push(n.gsub(" ", "_"))

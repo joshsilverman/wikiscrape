@@ -80,7 +80,12 @@ class DocumentsController < ApplicationController
   end
 
   def disambiguate_term
-    @topic = Topic.lookup_wiki_explicit(params[:link], params[:term_id], params[:doc_id])
+    @topic = Topic.wiki_disambiguate(params[:link], params[:term_id])
+    render :nothing => true
+  end
+
+  def reload_term
+    Topic.wiki_disambiguate(Topic.wiki_page_name(params[:term]), params[:term_id])
     render :nothing => true
   end
 

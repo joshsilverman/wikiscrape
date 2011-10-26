@@ -53,37 +53,38 @@ var saveTerm = function(topic_id) {
 }
 
 var reloadTerm = function(dom_id, term_id, doc_id) {
+    var term = $("title_" + dom_id).value;
 	$("div_" + dom_id).style.backgroundColor = "#D6D6D6";
-	params = {"link" : "/wiki/" + $("title_" + dom_id).value, 
+	params = { "term" : term, 
 		"term_id" : term_id,
-		"doc_id" : doc_id};
-	
-	new Ajax.Request('/documents/disambiguate_term', {
+		"doc_id" : doc_id
+    };	
+	new Ajax.Request('/documents/reload_term', {
         method: 'post',
         parameters: params,
         onFailure: function() {
-            alert("Lookup failed! Sorry bro :(");
+            alert("Sorry, update failed.");
         },
-        onSuccess: function() {
-        	callback_params = {"term_id" : term_id};
+        onSuccess: function(response) {
+        	callback_params = {"term_id" : term_id, "term" : term};
         	new Ajax.Request('/topics/get_topic', {
 		        method: 'post',
 		        parameters: callback_params,
 		        onFailure: function() {
-		            alert("Update failed!");
+		            alert("Sorry, update failed.");
 		        },
 		        onSuccess: function(response) {
-		        	var response = JSON.parse(response.request.transport.responseText)
-		        	$('title_' + dom_id).value = response.topic.topic.name
-		        	$('description_' + dom_id).value = response.topic.topic.description;
-		   			$('question_' + dom_id).value = response.topic.topic.question;
-		   		   	var answerText = "";
-		   			response.answers.each(function(answer) {
-		   				answerText = answerText + answer.answer.name + "\n";
-		   			});
-		   			$('answers_' + dom_id).value = answerText;
+		            var response = JSON.parse(response.request.transport.responseText)
+    	        	$('title_' + dom_id).value = response.topic.topic.name
+    	        	$('description_' + dom_id).value = response.topic.topic.description;
+    	   			$('question_' + dom_id).value = response.topic.topic.question;
+    	   		   	var answerText = "";
+    	   			response.answers.each(function(answer) {
+    	   				answerText = answerText + answer.answer.name + "\n";
+    	   			});
+    	   			$('answers_' + dom_id).value = answerText;
 
-		        	// UPDATE LINKS, ETC
+		      //   	// UPDATE LINKS, ETC
         		}.bind(this)
         	});
         }.bind(this)

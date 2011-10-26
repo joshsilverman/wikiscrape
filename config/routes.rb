@@ -16,6 +16,7 @@ Wikiscrape::Application.routes.draw do
   match "/cat_lookup/:name" => "lists#category_lookup"
   match "/to_csv/:id/:file_name" => "documents#export_document_to_csv"
   match "/documents/disambiguate_term" => "documents#disambiguate_term"
+  match "/documents/reload_term" => "documents#reload_term"
   match "/documents/show" => "documents#show"
   match "/documents/:id" => "documents#show"
   # The priority is based upon order of creation:
