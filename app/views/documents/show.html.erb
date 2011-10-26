@@ -12,7 +12,7 @@
         <br />     
         <center><h1><%= "#{ti.name}" %></h1></center>
         <%= form.label "Wikipedia topic", :class => "label" %> 
-        <%= form.text_field :name, :class => "field", :id => "title_" + @topic.id.to_s %> 
+        <%= form.text_field :name, :class => "field", :id => "title_" + @topic.id.to_s, :topic_id => "#{@topic.id}" %> 
         <%= link_to_function "Reload", "reloadTerm(#{@topic.id.to_s}, #{ti.id}, #{@document.id});" %>
         <br />
 
@@ -21,18 +21,16 @@
         <br /><br />
 
         <%= form.label "Definition", :class => "label" %>
-        <%= form.text_area :description, :rows=>8, :cols=>60, :class => "field", :id => "description_" + @topic.id.to_s %>
+        <%= form.text_area :description, :rows=>8, :cols=>60, :class => "field", :id => "description_" + @topic.id.to_s, :topic_id => "#{@topic.id}" %>
         <br /><br />
 
         <%= form.label "Question", :class => "label" %>
-        <%= form.text_area :question, :rows=>4, :cols=>60, :class => "field", :id => "question_" + @topic.id.to_s %>
+        <%= form.text_area :question, :rows=>4, :cols=>60, :class => "field", :id => "question_" + @topic.id.to_s, :topic_id => "#{@topic.id}" %>
         <br /><br />
 
         <%= form.label "Answers", :class => "label" %>
-        <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field", :id => "answers_" + @topic.id.to_s %>
+        <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field", :id => "answers_" + @topic.id.to_s, :topic_id => "#{@topic.id}" %>
         <br /><br />
-
-        <%= link_to_function "Save", "saveTerm(#{@topic.id.to_s});" %>
 
         <%= form_tag('/topics/' + @topic.id.to_s, :remote => true, :id => @topic.id.to_s) do %>
           <div><%= submit_tag 'Save', :class => "save", :id => @topic.id.to_s %></div>

@@ -8,13 +8,19 @@ var intializeListeners = function(){
 			$("div_" + save.id).style.backgroundColor = "#BFFFC0";
 		});
 	});	
+    $$(".field").each(function(field){
+        field.observe('keypress', function() {
+            $("div_" + field.getAttribute("topic_id")).style.backgroundColor = "#D6D6D6";
+        });
+    });
 }
 
 var saveTerm = function(topic_id) {
 	$("div_" + topic_id).style.backgroundColor = "#BFFFC0";
-	new Ajax.Request("/topics/" + topic_id, {
+    params = {"id" : topic_id};
+	new Ajax.Request("/topics/", {
         method: 'post',
- //        // parameters: params,
+        parameters: params,
         onFailure: function() {
         	$("div_" + topic_id).style.backgroundColor = "#D6D6D6";
             alert("Save failed!");
