@@ -56,18 +56,6 @@ class DocumentsController < ApplicationController
   # POST /documents.xml
   def create
     @document = Document.create!(params[:document])
-# <<<<<<< HEAD
-#     Document.parse_list(@document.id) unless @document.nil?
-
-#     respond_to do |format|
-# #      if @document.save
-#         format.html { redirect_to(@document, :notice => 'document was successfully created.') }
-#         format.xml  { render :xml => @document, :status => :created, :location => @document }
-# #      else
-# #        format.html { render :action => "new" }
-# #        format.xml  { render :xml => @document.errors, :status => :unprocessable_entity }
-# #      end
-# =======
     @ambiguous_terms = Document.parse_list(@document.id) unless @document.nil?
     @topic_identifiers = @document.topic_identifiers
     if !@ambiguous_terms.empty? && @document.save
@@ -92,12 +80,7 @@ class DocumentsController < ApplicationController
   end
 
   def disambiguate_term
-    puts params.to_json
     @topic = Topic.lookup_wiki_explicit(params[:link], params[:term_id], params[:doc_id])
-    # if @topic.save
-    #   redirect_to(@document, :notice => 'document was successfully created.')
-    # end
-    # return @topic
     render :nothing => true
   end
 
@@ -145,26 +128,9 @@ class DocumentsController < ApplicationController
   private
 
   def clean_markup_from_desc(str)
-
     str.gsub!("\s{2,}", " ")
     str.gsub!(" .", ".")
     str.gsub!("\n","")
-
-    # get_text = Scraper.define do
-    #   process "p", :just_text => :text
-    #   result :just_text
-    # end
-
-    # begin
-    #   raw_text = get_text.scrape(str)
-    #   raw_text.gsub! /\<[^>]*>\]/, ""
-    #   raw_text.gsub! /\[[^]*]\]/, ""
-    #   raw_text.gsub! /\([^)]*\)/, ""
-    #   raw_text.gsub!(" ,", ",")
-    # rescue
-    #   raw_text =  "ERROR!!"
-    # end
-
     return str
   end
 end

@@ -48,16 +48,14 @@ class Topic < ActiveRecord::Base
       puts "Error scraping!"
       return nil
     end
-    # puts article.description[0]
-    # puts article.name
-    # puts article.image[0] if article.image
     disambig = article.all_html =~ /This disambiguation page lists articles associated with the same title./i
     article.disambig = true unless disambig.nil?
     article.all_html = nil  
     return {:article => article, :follow => article.follow}
   end
 
-  def self.lookup_wiki_explicit(url, term_id, doc_id)
+  def self.lookup_wiki_explicit(name, term_id, doc_id)
+    name.gsub!(" ","_")
     description_index = nil
     wiki_article = Scraper.define do
       array :description
@@ -82,8 +80,8 @@ class Topic < ActiveRecord::Base
 
     begin
       article = nil
-      puts "scraping http://en.wikipedia.org/wiki/#{url}"
-      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org#{url}"))
+      puts "scraping http://en.wikipedia.org/wiki/#{name}"
+      article = wiki_article.scrape(URI.parse("http://en.wikipedia.org#{name}"))
       article.description = article.description[description_index..-1]
       article.disambig = false
     rescue
@@ -125,19 +123,9 @@ class Topic < ActiveRecord::Base
   # private
 
   def to_question
-
     raw_text = self.description
-    # get_text = Scraper.define do
-    #   process "p", :just_text => :text
-    #   result :just_text
-    # end
-
     text = "Error"
     begin
-      # raw_text = get_text.scrape(topic.description)
-      # raw_text.gsub! /\<[^>]*>\]/, ""
-      # raw_text.gsub! /\[[^]*]\]/, ""
-      # raw_text.gsub! /\([^)]*\)/, ""
       first_sent = raw_text.split(/\.\s*"?[A-Z]|\.$/)[0]
       chunks = first_sent.split(/ (is|are|was|were|refers to|comprises) /)
 
@@ -146,7 +134,6 @@ class Topic < ActiveRecord::Base
       else
         question_word = "Which "
       end
-
       text = (question_word + chunks[1..(chunks.length - 1)].join(" ")).gsub(/^\s+|\s+$/, '') + "?"
     rescue
       puts "Error occured in to_question"

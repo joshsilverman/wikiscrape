@@ -10,14 +10,13 @@
     <%= form_for @topic, :remote => true do |form| %>
       <%= content_tag :div, :class => "container", :id => "div_" + @topic.id.to_s do %>
         <br />     
-
+        <center><h1><%= "#{ti.name}" %></h1></center>
         <%= form.label "Wikipedia topic", :class => "label" %> 
         <%= form.text_field :name, :class => "field", :id => "title_" + @topic.id.to_s %> 
         <%= link_to_function "Reload", "reloadTerm(#{@topic.id.to_s}, #{ti.id}, #{@document.id});" %>
         <br />
 
-        <%= form.label "Original search term: #{ti.name}", :class => "misc" %>
-        <%= link_to "(Original article)", "http://www.wikipedia.org/wiki/#{@topic.name}", :target => "_blank", :id => "original_" + @topic.id.to_s %> or  
+        <%= link_to "Original article", "http://www.wikipedia.org/wiki/#{@topic.name}", :target => "_blank", :id => "original_" + @topic.id.to_s %> or  
         <%= link_to "Wiki Search", "http://en.wikipedia.org/w/index.php?title=Special%3ASearch&search=#{@topic.name}&fulltext=Search&ns0=1&redirs=1&profile=advanced", :target => "_blank", :id => "wiki_search_" + @topic.id.to_s %>
         <br /><br />
 
@@ -32,6 +31,8 @@
         <%= form.label "Answers", :class => "label" %>
         <%= text_area "answers", "text", :value => @answers[@topic.id], :rows=>10, :cols=>60, :class => "field", :id => "answers_" + @topic.id.to_s %>
         <br /><br />
+
+        <%= link_to_function "Save", "saveTerm(#{@topic.id.to_s});" %>
 
         <%= form_tag('/topics/' + @topic.id.to_s, :remote => true, :id => @topic.id.to_s) do %>
           <div><%= submit_tag 'Save', :class => "save", :id => @topic.id.to_s %></div>
