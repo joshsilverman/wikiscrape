@@ -16,7 +16,11 @@ class Topic < ActiveRecord::Base
 
   def self.lookup_on_wiki(name)
     article = scrape_body(name) 
-    return {:article => article, :follow => article.follow}
+    if article
+      return {:article => article, :follow => article.follow}
+    else
+      return
+    end
   end
 
   def self.wiki_disambiguate(name, term_id)    

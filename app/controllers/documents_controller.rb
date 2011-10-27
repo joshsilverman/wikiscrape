@@ -114,10 +114,10 @@ class DocumentsController < ApplicationController
         answers = Answer.where("topic_id = ?",ti.topic_id)
         next if topic.nil? || topic.description.nil? || topic.description.length < 1
 
-        row = [ti.name, clean_markup_from_desc(topic.description), topic.question]
+        row = [clean_markup_from_desc(ti.name), clean_markup_from_desc(topic.description), clean_markup_from_desc(topic.question)]
         unless answers.nil?
           answers.each do |a|
-            row << a.name
+            row << clean_markup_from_desc(a.name)
           end
         end
         csv << row
