@@ -3,7 +3,7 @@ class Cat < ActiveRecord::Base
   has_and_belongs_to_many :topics, :uniq => true
 
   def self.cat_lookup(name)
-
+    puts "Cat lookup: #{name}"
     wiki_cat = Scraper.define do
       array :names
       process "#mw-pages li >a", :names => :text

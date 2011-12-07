@@ -15,36 +15,29 @@ class Document < ActiveRecord::Base
       @topic_identifier = TopicIdentifier.find_by_name(ti)
 
       if @topic_identifier.nil?
-        # puts "1"
         #check topic_identifier for wiki article
         topic_name = Topic.wiki_page_name(ti)
 
         #if article doesnt exist return
         if topic_name.nil?
-          # puts "2"
           @document.topic_identifiers << TopicIdentifier.create(:name => ti)
           next
 
         #else article exists
         else
-          # puts "3"
           @topic = Topic.find_by_name(topic_name)
           #check for topic
           if @topic && @topic.description
-            # puts "4"
             @document.topic_identifiers << TopicIdentifier.create(:name => ti, :topic_id => @topic.id)
           elsif @topic
-            # puts "5"
             #look up article on wikipedia
             full_topic = Topic.lookup_on_wiki(topic_name)
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:article][:disambig]
-              # puts "6"
               @new_ti = TopicIdentifier.create(:name => ti, :is_disambiguation => true)
               @document.topic_identifiers << @new_ti
               @ambiguous_terms << {:name => ti, :topic_id => @new_ti.id, :links => full_topic[:follow]}
             else
-              # puts "7"
               #otherwise update the topic with new info and create identifier for it
               @topic.update_attributes(
                   :img_url => (full_topic[:article][:image][0] if full_topic[:article][:image]),
@@ -55,18 +48,15 @@ class Document < ActiveRecord::Base
               @topic.build_q_and_a
             end
           else
-            # puts "8"
             #create topic from wiki
             full_topic = Topic.lookup_on_wiki(topic_name)
             puts full_topic[:article][:name]
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:article][:disambig]
-              # puts "9"
               @new_ti = TopicIdentifier.create(:name => ti, :is_disambiguation => true)
               @document.topic_identifiers << @new_ti
               @ambiguous_terms << {:name => ti, :topic_id => @new_ti.id, :links => full_topic[:follow]}
             else
-              # puts "10"
               #otherwise update the topic with new info and create identifier for it
               @topic = Topic.create(
                   :name => (full_topic[:article][:name] if full_topic[:article][:name]),

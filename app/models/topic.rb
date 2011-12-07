@@ -9,6 +9,7 @@ class Topic < ActiveRecord::Base
     article_name = nil
     while article_name.nil? and not name_stack.empty?
       temp_name = name_stack.pop
+      puts temp_name
       article_name = quick_lookup(temp_name)
     end
     return article_name
@@ -19,7 +20,7 @@ class Topic < ActiveRecord::Base
     return {:article => article, :follow => article.follow}
   end
 
-  def self.wiki_disambiguate(name, term_id)    
+  def self.wiki_disambiguate(name, term_id)   
     article = scrape_body(name)
     topic_identifier = TopicIdentifier.find_by_id(term_id)
     topic = Topic.create(
@@ -30,7 +31,10 @@ class Topic < ActiveRecord::Base
     )
     Answer.delete_all(:topic_id => term_id)
     topic_identifier.update_attributes({:topic_id => topic.id, :is_disambiguation => false})
-    topic.build_q_and_a
+    Cat.add_categories(article[:catlinks])
+    
+    #Problem: categories are being added, but asynchronously, none are found in build QA
+    # topic.build_q_and_a
   end
 
   def self.scrape_body(name)
@@ -80,7 +84,9 @@ class Topic < ActiveRecord::Base
     if question.length > 10
       self.update_attribute(:question, question)
       answers = self.false_answers
-      if answers.size>1
+      puts "Answers:"
+      puts answers.to_json
+      if answers.size > 1
         answers.each do |answer|
           Answer.find_or_create_by_name_and_topic_id(answer, self.id)
         end
@@ -113,8 +119,10 @@ class Topic < ActiveRecord::Base
 
   def false_answers
     choices = Set.new() #[self.name]
-    begin
+    # begin
       @topics = Topic.find_by_id(self.id, :include => [{:cats => :topics}])
+      puts @topics.to_json
+      puts @topics.cats.to_json
       desc_words = self.question.gsub(/\(|\)|\?|\.|\[|\]/, '').split(' ')
 
       cat_buckets = []
@@ -145,7 +153,6 @@ class Topic < ActiveRecord::Base
       cat_buckets.each {|bucket| puts bucket[:cat].name + ": " + bucket[:rel].to_s}
 
       # Iterate through the buckets, picking three terms from each, until the maximum of ten terms has been reached
-
       cat_buckets.each do |bucket|
         scored_topics = []
         puts "Checking category #{bucket[:cat].name}"  
@@ -186,10 +193,10 @@ class Topic < ActiveRecord::Base
       end    
       
       return choices.to_a
-    rescue
-      puts "Error generating false answers!"
-      return choices.to_a
-    end
+    # rescue
+    #   puts "Error generating false answers!"
+    #   return choices.to_a
+    # end
   end
 
   def matching_word_endings(compare)
@@ -203,6 +210,7 @@ class Topic < ActiveRecord::Base
   end
 
   def self.quick_lookup(n)
+    puts n
     agent = Mechanize.new { |agent| agent.user_agent_alias = 'Mac Safari'}
     agent.follow_meta_refresh = true
 
