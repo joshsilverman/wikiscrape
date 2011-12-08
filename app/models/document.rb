@@ -32,6 +32,7 @@ class Document < ActiveRecord::Base
           elsif @topic
             #look up article on wikipedia
             full_topic = Topic.lookup_on_wiki(topic_name)
+            next if full_topic.nil?
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:article][:disambig]
               @new_ti = TopicIdentifier.create(:name => ti, :is_disambiguation => true)
@@ -50,6 +51,7 @@ class Document < ActiveRecord::Base
           else
             #create topic from wiki
             full_topic = Topic.lookup_on_wiki(topic_name)
+            next if full_topic.nil?
             puts full_topic[:article][:name]
             #if it's a disambig page create identifier and throw disambig flag
             if full_topic[:article][:disambig]
