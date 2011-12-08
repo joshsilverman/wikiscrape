@@ -115,7 +115,7 @@ class DocumentsController < ApplicationController
      @document.topic_identifiers.each do |ti|
         topic = Topic.find_by_id(ti.topic_id)
         answers = Answer.where("topic_id = ?",ti.topic_id)
-        next if topic.nil?
+        next if topic.nil? || topic.description.length < 1
 
         row = [ti.name, clean_markup_from_desc(topic.description), topic.question]
         unless answers.nil?
@@ -139,6 +139,7 @@ class DocumentsController < ApplicationController
 
     str.gsub!("\s{2,}", " ")
     str.gsub!(" .", ".")
+    str.gsub!("\n","")
 
     # get_text = Scraper.define do
     #   process "p", :just_text => :text
